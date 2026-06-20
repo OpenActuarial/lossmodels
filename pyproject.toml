@@ -40,9 +40,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/michaelabryant/lossmodels"
-Repository = "https://github.com/michaelabryant/lossmodels"
-Issues = "https://github.com/michaelabryant/lossmodels/issues"
+Homepage = "https://github.com/actuarialpy/lossmodels"
+Repository = "https://github.com/actuarialpy/lossmodels"
+Issues = "https://github.com/actuarialpy/lossmodels/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
