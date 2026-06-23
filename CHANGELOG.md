@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+- `SplicedSeverity`: a generic two-piece spliced/composite severity holding a
+  body distribution below a threshold and a tail distribution above it, with a
+  mixing weight equal to the body mass. The body is renormalized onto `(0, u]`
+  and the tail must be supported on `[u, inf)` with `cdf(u) = 0` (e.g. a
+  `Pareto` with `theta = u`, or a generalized-Pareto tail supplied by
+  `extremeloss`). Exposes the full severity interface (`pdf`, `cdf`, `quantile`,
+  `sample`, `mean`, `variance`), so a tail-corrected severity drops straight
+  back into `risksim` / `extremeloss`. The container is tail-agnostic and never
+  imports `extremeloss`; it consumes any duck-typed tail object. Re-exported at
+  the top level as `lossmodels.SplicedSeverity`.
+
 ## 0.3.0
 
 ### Added

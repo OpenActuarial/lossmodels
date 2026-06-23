@@ -6,7 +6,7 @@ available directly as ``lossmodels.Lognormal``, ``lossmodels.fit_best_severity``
 (``from lossmodels.severity import Lognormal``) continue to work unchanged.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from .severity import (
     SeverityModel,
@@ -14,6 +14,7 @@ from .severity import (
     Gamma,
     Lognormal,
     Pareto,
+    SplicedSeverity,
     Weibull,
 )
 from .frequency import (
@@ -48,7 +49,8 @@ from .estimation import (
 
 __all__ = [
     "__version__",
-    "SeverityModel", "Exponential", "Gamma", "Lognormal", "Pareto", "Weibull",
+    "SeverityModel", "Exponential", "Gamma", "Lognormal", "Pareto",
+    "SplicedSeverity", "Weibull",
     "FrequencyModel", "Binomial", "Geometric", "NegativeBinomial", "Poisson",
     "CollectiveRiskModel", "EmpiricalSeverity", "EmpiricalFrequency",
     "fit_exponential", "fit_gamma", "fit_lognormal", "fit_pareto", "fit_poisson",

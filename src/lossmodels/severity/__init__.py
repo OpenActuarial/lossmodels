@@ -3,6 +3,7 @@ from .exponential import Exponential
 from .gamma import Gamma
 from .lognormal import Lognormal
 from .pareto import Pareto
+from .spliced import SplicedSeverity
 from .weibull import Weibull
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "Gamma",
     "Lognormal",
     "Pareto",
+    "SplicedSeverity",
     "Weibull",
 ]
