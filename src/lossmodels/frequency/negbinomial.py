@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import nbinom
 
 from .base import FrequencyModel
+from ..utils.numeric import eval_dist
 
 
 class NegativeBinomial(FrequencyModel):
@@ -60,23 +61,11 @@ class NegativeBinomial(FrequencyModel):
         """
         return self.r * (1 - self.p) / (self.p ** 2)
 
-    def pmf(self, k: int) -> float:
-        """
-        Probability mass function P(N = k).
-        """
-        if k < 0:
-            return 0.0
+    def pmf(self, k):
+        return eval_dist(lambda v: nbinom.pmf(v, self.r, self.p), k)
 
-        return float(nbinom.pmf(k, self.r, self.p))
-
-    def cdf(self, k: int) -> float:
-        """
-        Cumulative distribution function P(N <= k).
-        """
-        if k < 0:
-            return 0.0
-
-        return float(nbinom.cdf(k, self.r, self.p))
+    def cdf(self, k):
+        return eval_dist(lambda v: nbinom.cdf(v, self.r, self.p), k)
 
     def __repr__(self) -> str:
         return f"NegativeBinomial(r={self.r}, p={self.p})"

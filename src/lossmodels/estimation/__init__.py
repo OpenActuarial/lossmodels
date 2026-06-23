@@ -17,7 +17,16 @@ from .moments import (
     fit_weibull_moments,
     fit_negbinomial_moments,
 )
-from .diagnostics import log_likelihood, aic, bic
+from .diagnostics import (
+    log_likelihood,
+    aic,
+    bic,
+    ks_statistic,
+    anderson_darling,
+    cramer_von_mises,
+    tail_quantile_table,
+    goodness_of_fit,
+)
 from .model_selection import fit_best_severity
 from .frequency_selection import fit_best_frequency
 
@@ -40,6 +49,11 @@ __all__ = [
     "log_likelihood",
     "aic",
     "bic",
+    "ks_statistic",
+    "anderson_darling",
+    "cramer_von_mises",
+    "tail_quantile_table",
+    "goodness_of_fit",
     "fit_best_severity",
     "fit_best_frequency",
 ]

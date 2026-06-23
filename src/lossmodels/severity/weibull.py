@@ -3,6 +3,7 @@ from scipy.special import gamma as gamma_func
 from scipy.stats import weibull_min
 
 from .base import SeverityModel
+from ..utils.numeric import eval_dist
 
 
 class Weibull(SeverityModel):
@@ -45,15 +46,14 @@ class Weibull(SeverityModel):
         m2 = gamma_func(1 + 2 / self.k)
         return float(self.lam ** 2 * (m2 - m1 ** 2))
 
-    def pdf(self, x: float) -> float:
-        if x < 0:
-            return 0.0
-        return float(weibull_min.pdf(x, c=self.k, scale=self.lam))
+    def pdf(self, x):
+        return eval_dist(lambda v: weibull_min.pdf(v, c=self.k, scale=self.lam), x)
 
-    def cdf(self, x: float) -> float:
-        if x < 0:
-            return 0.0
-        return float(weibull_min.cdf(x, c=self.k, scale=self.lam))
+    def cdf(self, x):
+        return eval_dist(lambda v: weibull_min.cdf(v, c=self.k, scale=self.lam), x)
+
+    def quantile(self, p):
+        return eval_dist(lambda v: weibull_min.ppf(v, c=self.k, scale=self.lam), p)
 
     def __repr__(self) -> str:
         return f"Weibull(k={self.k}, lam={self.lam})"

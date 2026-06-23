@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import lognorm
 
 from .base import SeverityModel
+from ..utils.numeric import eval_dist
 
 
 class Lognormal(SeverityModel):
@@ -41,15 +42,14 @@ class Lognormal(SeverityModel):
         sigma2 = self.sigma ** 2
         return float((np.exp(sigma2) - 1) * np.exp(2 * self.mu + sigma2))
 
-    def pdf(self, x: float) -> float:
-        if x <= 0:
-            return 0.0
-        return float(lognorm.pdf(x, s=self.sigma, scale=np.exp(self.mu)))
+    def pdf(self, x):
+        return eval_dist(lambda v: lognorm.pdf(v, s=self.sigma, scale=np.exp(self.mu)), x)
 
-    def cdf(self, x: float) -> float:
-        if x <= 0:
-            return 0.0
-        return float(lognorm.cdf(x, s=self.sigma, scale=np.exp(self.mu)))
+    def cdf(self, x):
+        return eval_dist(lambda v: lognorm.cdf(v, s=self.sigma, scale=np.exp(self.mu)), x)
+
+    def quantile(self, p):
+        return eval_dist(lambda v: lognorm.ppf(v, s=self.sigma, scale=np.exp(self.mu)), p)
 
     def __repr__(self) -> str:
         return f"Lognormal(mu={self.mu}, sigma={self.sigma})"

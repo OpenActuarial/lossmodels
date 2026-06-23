@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import gamma
 
 from .base import SeverityModel
+from ..utils.numeric import eval_dist
 
 
 class Gamma(SeverityModel):
@@ -42,15 +43,14 @@ class Gamma(SeverityModel):
     def variance(self) -> float:
         return self.alpha * (self.theta ** 2)
 
-    def pdf(self, x: float) -> float:
-        if x < 0:
-            return 0.0
-        return float(gamma.pdf(x, a=self.alpha, scale=self.theta))
+    def pdf(self, x):
+        return eval_dist(lambda v: gamma.pdf(v, a=self.alpha, scale=self.theta), x)
 
-    def cdf(self, x: float) -> float:
-        if x < 0:
-            return 0.0
-        return float(gamma.cdf(x, a=self.alpha, scale=self.theta))
+    def cdf(self, x):
+        return eval_dist(lambda v: gamma.cdf(v, a=self.alpha, scale=self.theta), x)
+
+    def quantile(self, p):
+        return eval_dist(lambda v: gamma.ppf(v, a=self.alpha, scale=self.theta), p)
 
     def __repr__(self) -> str:
         return f"Gamma(alpha={self.alpha}, theta={self.theta})"

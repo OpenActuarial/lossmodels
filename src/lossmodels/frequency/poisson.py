@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import poisson
 
 from .base import FrequencyModel
+from ..utils.numeric import eval_dist
 
 
 class Poisson(FrequencyModel):
@@ -39,17 +40,13 @@ class Poisson(FrequencyModel):
         """Var(N) = lam."""
         return self.lam
 
-    def pmf(self, k: int) -> float:
+    def pmf(self, k):
         """Probability mass function P(N = k)."""
-        if k < 0:
-            return 0.0
-        return float(poisson.pmf(k, self.lam))
+        return eval_dist(lambda v: poisson.pmf(v, self.lam), k)
 
-    def cdf(self, k: int) -> float:
+    def cdf(self, k):
         """Cumulative distribution function P(N <= k)."""
-        if k < 0:
-            return 0.0
-        return float(poisson.cdf(k, self.lam))
+        return eval_dist(lambda v: poisson.cdf(v, self.lam), k)
 
     def __repr__(self) -> str:
         return f"Poisson(lam={self.lam})"

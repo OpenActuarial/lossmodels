@@ -55,6 +55,11 @@ class EmpiricalSeverity(SeverityModel):
 
         return float(np.mean(self.data <= x))
 
+    def quantile(self, p):
+        """Empirical quantile (inverse CDF) from the observed data."""
+        q = np.quantile(self.data, p)
+        return float(q) if np.ndim(p) == 0 else np.asarray(q, dtype=float)
+
     def excess_loss(self, d: float) -> float:
         """
         E[(X - d)+] computed empirically.

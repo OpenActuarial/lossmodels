@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import binom
 
 from .base import FrequencyModel
+from ..utils.numeric import eval_dist
 
 
 class Binomial(FrequencyModel):
@@ -34,11 +35,13 @@ class Binomial(FrequencyModel):
     def variance(self) -> float:
         return self.n * self.p * (1 - self.p)
 
-    def pmf(self, k: int) -> float:
-        """
-        Probability mass function P(N = k)
-        """
-        return binom.pmf(k, self.n, self.p)
+    def pmf(self, k):
+        """Probability mass function P(N = k)."""
+        return eval_dist(lambda v: binom.pmf(v, self.n, self.p), k)
+
+    def cdf(self, k):
+        """Cumulative distribution function P(N <= k)."""
+        return eval_dist(lambda v: binom.cdf(v, self.n, self.p), k)
 
     def __repr__(self):
         return f"Binomial(n={self.n}, p={self.p})"

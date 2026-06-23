@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import expon
 
 from .base import SeverityModel
+from ..utils.numeric import eval_dist
 
 
 class Exponential(SeverityModel):
@@ -45,15 +46,14 @@ class Exponential(SeverityModel):
     def variance(self) -> float:
         return 1.0 / (self.rate ** 2)
 
-    def pdf(self, x: float) -> float:
-        if x < 0:
-            return 0.0
-        return float(expon.pdf(x, scale=self.scale))
+    def pdf(self, x):
+        return eval_dist(lambda v: expon.pdf(v, scale=self.scale), x)
 
-    def cdf(self, x: float) -> float:
-        if x < 0:
-            return 0.0
-        return float(expon.cdf(x, scale=self.scale))
+    def cdf(self, x):
+        return eval_dist(lambda v: expon.cdf(v, scale=self.scale), x)
+
+    def quantile(self, p):
+        return eval_dist(lambda v: expon.ppf(v, scale=self.scale), p)
 
     def excess_loss(self, d: float) -> float:
         """

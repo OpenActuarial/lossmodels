@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import geom
 
 from .base import FrequencyModel
+from ..utils.numeric import eval_dist
 
 
 class Geometric(FrequencyModel):
@@ -38,23 +39,13 @@ class Geometric(FrequencyModel):
     def variance(self) -> float:
         return (1 - self.p) / (self.p ** 2)
 
-    def pmf(self, k: int) -> float:
-        """
-        Probability mass function P(N = k)
-        """
-        if k < 0:
-            return 0.0
-        
-        return geom.pmf(k + 1, self.p)
-    
-    def cdf(self, k: int) -> float:
-        """
-        Cumulative distribution function P(N <= k)
-        """
-        if k < 0:
-            return 0.0
-        
-        return geom.cdf(k + 1, self.p)
+    def pmf(self, k):
+        """Probability mass function P(N = k)."""
+        return eval_dist(lambda v: geom.pmf(v + 1, self.p), k)
+
+    def cdf(self, k):
+        """Cumulative distribution function P(N <= k)."""
+        return eval_dist(lambda v: geom.cdf(v + 1, self.p), k)
 
     def __repr__(self):
         return f"Geometric(p={self.p})"

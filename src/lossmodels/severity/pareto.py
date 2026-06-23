@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import pareto
 
 from .base import SeverityModel
+from ..utils.numeric import eval_dist
 
 
 class Pareto(SeverityModel):
@@ -49,15 +50,14 @@ class Pareto(SeverityModel):
             raise ValueError("Variance does not exist for alpha <= 2.")
         return (self.alpha * self.theta ** 2) / ((self.alpha - 1) ** 2 * (self.alpha - 2))
 
-    def pdf(self, x: float) -> float:
-        if x < self.theta:
-            return 0.0
-        return float(pareto.pdf(x, b=self.alpha, scale=self.theta))
+    def pdf(self, x):
+        return eval_dist(lambda v: pareto.pdf(v, b=self.alpha, scale=self.theta), x)
 
-    def cdf(self, x: float) -> float:
-        if x < self.theta:
-            return 0.0
-        return float(pareto.cdf(x, b=self.alpha, scale=self.theta))
+    def cdf(self, x):
+        return eval_dist(lambda v: pareto.cdf(v, b=self.alpha, scale=self.theta), x)
+
+    def quantile(self, p):
+        return eval_dist(lambda v: pareto.ppf(v, b=self.alpha, scale=self.theta), p)
 
     def __repr__(self) -> str:
         return f"Pareto(alpha={self.alpha}, theta={self.theta})"
