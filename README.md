@@ -9,74 +9,76 @@ A Python library for actuarial loss modeling using frequency–severity methods.
 
 ## Overview
 
-`lossmodels` is a Python library for frequency-severity modeling, aggregate loss analysis, actuarial coverage modifications, and model fitting. It is designed for actuarial students, analysts, insurance data scientists, and quantitative developers who want a lightweight, readable implementation of core loss modeling techniques.
+`lossmodels` is a readable, NumPy/SciPy-backed implementation of the core
+loss-modeling toolkit: a large catalog of severity and frequency distributions,
+aggregate (collective-risk) loss models, coverage modifications, and fitting and
+model-selection utilities. It is aimed at actuarial students, analysts, insurance
+data scientists, and quantitative developers who want a lightweight library whose
+parameterizations line up with the standard references.
+
+The continuous-severity and discrete-frequency inventories follow the
+parameterizations in *Loss Models: From Data to Decisions* (Klugman, Panjer,
+Willmot), Appendices A and B — the same set used on the SOA **FAM** and **ASTAM**
+exam tables — so results can be checked directly against textbook and exam
+formulas.
 
 ## Highlights
 
-- Frequency models: Poisson, Negative Binomial, Binomial, Geometric
-- Severity models: Exponential, Gamma, Lognormal, Pareto, Weibull
-- Empirical distributions for frequency and severity data
-- Aggregate loss modeling with:
-  - Monte Carlo simulation
-  - Panjer recursion
-  - FFT aggregation for Poisson frequency
-- Risk measures:
-  - VaR
-  - TVaR
-  - Stop-loss
-  - Limited expected value
-  - PMF-based risk metrics
-- Coverage modifications:
-  - Ordinary deductibles
-  - Policy limits
-  - Layers
-- Estimation tools:
-  - Maximum likelihood estimation
-  - Method of moments
-  - AIC / BIC diagnostics
-  - Best-fit selection for supported severity and frequency models
+- **Severity models** — the full Klugman continuous inventory: lognormal, gamma,
+  Weibull, exponential and their inverses; the transformed-beta family (Burr,
+  inverse Burr, generalized Pareto, Pareto/Lomax, inverse Pareto, loglogistic,
+  paralogistic, inverse paralogistic); inverse Gaussian, log-t,
+  single-parameter Pareto; and finite-support beta / generalized beta.
+- **Frequency models** — the `(a, b, 0)` class (Poisson, binomial, geometric,
+  negative binomial) and the `(a, b, 1)` class (zero-truncated, zero-modified,
+  logarithmic).
+- **Spliced / composite severities** — a body distribution below a threshold and a
+  heavier tail above it, behind a single severity interface.
+- **Empirical distributions** for raw frequency and severity data.
+- **Aggregate loss modeling** — Monte Carlo simulation, Panjer recursion, and FFT
+  aggregation, plus distribution-level and PMF-level risk measures (VaR, TVaR,
+  stop-loss, limited expected value).
+- **Coverage modifications** — ordinary deductibles, policy limits, and layers,
+  each wrapping any severity and re-usable everywhere a severity is accepted.
+- **Estimation** — maximum likelihood and method-of-moments fitters,
+  log-likelihood / AIC / BIC diagnostics, goodness-of-fit statistics (KS,
+  Anderson–Darling, Cramér–von Mises), and automatic best-fit selection.
 
 ## Installation
 
-Install from PyPI:
+From PyPI:
 
 ```bash
 pip install lossmodels
 ```
 
-Install in development mode from source:
+In development mode from a source checkout:
 
 ```bash
 pip install -e .
 ```
 
-Current package metadata:
+Requires Python `>=3.10`; the only runtime dependencies are `numpy` and `scipy`.
 
-- Version: `0.2.0`
-- Python: `>=3.10`
-- Core dependencies: `numpy`, `scipy`
-
-## Package Structure
+## Package structure
 
 ```text
 lossmodels/
-├── aggregate/     # aggregate loss models, discretization, Panjer, FFT, risk metrics
+├── severity/      # continuous claim-severity distributions
+├── frequency/     # discrete claim-count distributions
+├── aggregate/     # collective-risk models, discretization, Panjer, FFT, risk metrics
 ├── coverage/      # deductibles, limits, and layers
 ├── empirical/     # empirical frequency and severity distributions
 ├── estimation/    # MLE, method of moments, diagnostics, model selection
-├── frequency/     # discrete claim count models
-├── severity/      # continuous claim severity models
-└── utils/         # helper utilities
+└── utils/         # shared numeric / validation helpers
 ```
 
-## Quick Start
+## Quick start
 
-### Frequency-Severity Aggregate Model
+### A frequency–severity aggregate model
 
 ```python
-from lossmodels.frequency import Poisson
-from lossmodels.severity import Lognormal
-from lossmodels.aggregate import CollectiveRiskModel
+from lossmodels import Poisson, Lognormal, CollectiveRiskModel
 
 freq = Poisson(lam=2.0)
 sev = Lognormal(mu=10.0, sigma=0.8)
@@ -92,135 +94,322 @@ samples = model.sample(50_000)
 print("Simulated mean:", samples.mean())
 ```
 
-### Fit Models to Data
+Every model name is importable directly from the top level
+(`from lossmodels import Burr, ZeroTruncated, ...`) or from its submodule
+(`from lossmodels.severity import Burr`).
+
+### Using the exam-table distributions
 
 ```python
-from lossmodels.estimation import (
-    fit_lognormal,
-    fit_poisson,
-    fit_best_severity,
-    fit_best_frequency,
-)
+from lossmodels import Burr, ParetoII, ZeroTruncated, Poisson, CollectiveRiskModel
 
-freq_model = fit_poisson(freq_data)
-sev_model = fit_lognormal(sev_data)
+sev = ParetoII(alpha=3.0, theta=1000.0)        # FAM/ASTAM "Pareto" (Type II / Lomax)
+freq = ZeroTruncated(Poisson(2.0))             # an (a, b, 1) frequency
 
-best_severity = fit_best_severity(sev_data, criterion="aic")
-best_frequency = fit_best_frequency(freq_data, criterion="bic")
+model = CollectiveRiskModel(freq, sev)
+print(model.mean(), model.var(0.99))
 
-print(best_severity["best_name"])
-print(best_frequency["best_name"])
+burr = Burr(alpha=3.0, theta=1000.0, gamma=2.0)
+print(burr.mean(), burr.cdf(2500.0), burr.quantile(0.95))
+print(burr.limited_expected_value(1000.0))     # E[min(X, 1000)]
 ```
 
-### Coverage Modifications
+## Severity models
+
+### The shared severity interface
+
+Every severity exposes the same interface, so they are interchangeable across the
+aggregate, coverage, and estimation tooling:
+
+| Method | Meaning |
+| --- | --- |
+| `pdf(x)`, `cdf(x)` | density and distribution function (scalar or array) |
+| `quantile(p)` / `ppf(p)` | inverse CDF / Value-at-Risk |
+| `sample(size)` | random variates |
+| `mean()`, `variance()`, `std()` | moments (raise where they do not exist) |
+| `limited_expected_value(d)` | `E[min(X, d)]` |
+| `excess_loss(d)` | `E[(X − d)₊]`, the expected cost per loss above `d` |
+
+Moments are returned from the closed-form Klugman expressions and **raise a
+`ValueError` outside their existence range** (e.g. a Pareto mean with `alpha ≤ 1`),
+rather than silently returning a wrong or infinite number. A few distributions
+(inverse Pareto, inverse exponential, log-t) have no finite positive moments, so
+their `mean`/`variance` always raise.
+
+### Base and classic distributions
+
+| Distribution | Constructor | Support |
+| --- | --- | --- |
+| Exponential | `Exponential(rate)` | `x > 0` |
+| Gamma | `Gamma(alpha, theta)` | `x > 0` |
+| Lognormal | `Lognormal(mu, sigma)` | `x > 0` |
+| Weibull | `Weibull(k, lam)` | `x > 0` |
+| Pareto (Type I) | `Pareto(alpha, theta)` | `x ≥ theta` |
+
+### Transformed beta family
+
+| Distribution | Constructor |
+| --- | --- |
+| Burr (Type XII / Singh–Maddala) | `Burr(alpha, theta, gamma)` |
+| Inverse Burr (Dagum) | `InverseBurr(tau, theta, gamma)` |
+| Generalized Pareto (Klugman) | `GeneralizedPareto(alpha, theta, tau)` |
+| Pareto (Type II / Lomax) | `ParetoII(alpha, theta)` |
+| Inverse Pareto | `InversePareto(tau, theta)` |
+| Loglogistic (Fisk) | `Loglogistic(gamma, theta)` |
+| Paralogistic | `Paralogistic(alpha, theta)` |
+| Inverse paralogistic | `InverseParalogistic(tau, theta)` |
+
+### Transformed gamma family
+
+| Distribution | Constructor |
+| --- | --- |
+| Inverse gamma (Vinci) | `InverseGamma(alpha, theta)` |
+| Inverse Weibull (log-Gompertz) | `InverseWeibull(theta, tau)` |
+| Inverse exponential | `InverseExponential(theta)` |
+
+### Other distributions
+
+| Distribution | Constructor |
+| --- | --- |
+| Inverse Gaussian (Wald) | `InverseGaussian(mu, theta)` |
+| Log-t | `LogT(r, mu, sigma)` |
+| Single-parameter Pareto (Type I) | `SingleParameterPareto(alpha, theta)` |
+
+### Finite-support distributions
+
+| Distribution | Constructor | Support |
+| --- | --- | --- |
+| Beta | `Beta(a, b, theta)` | `0 < x < theta` |
+| Generalized beta | `GeneralizedBeta(a, b, theta, tau)` | `0 < x < theta` |
+
+### Parameterization notes
+
+A few naming points matter when matching exam answers:
+
+- **Two Paretos.** `ParetoII(alpha, theta)` is the FAM/ASTAM two-parameter
+  "Pareto" (Type II / Lomax, support `x > 0`). The classic `Pareto(alpha, theta)`
+  is the **Type I** distribution (support `x ≥ theta`), which the FAM tables list
+  as "Single-Parameter Pareto"; it is also exposed under that name as
+  `SingleParameterPareto`.
+- **`GeneralizedPareto` here is the Klugman three-parameter transformed-beta
+  distribution**, not the extreme-value GPD used in peaks-over-threshold tail
+  fitting. The extreme-value distributions (GEV, Gumbel, Fréchet, GPD, Hill) live
+  in the companion `extremeloss` package.
+- `Exponential` is parameterized by `rate` (= `1/theta`) and `Weibull` by shape
+  `k` and scale `lam`; the FAM-named additions follow Klugman's scale convention
+  with parameter `theta`.
+
+## Frequency models
+
+### The shared frequency interface
+
+Every frequency model exposes `pmf(k)`, `cdf(k)`, `sample(size)`, `mean()`,
+`variance()`, and `std()`.
+
+### The (a, b, 0) class
+
+| Distribution | Constructor |
+| --- | --- |
+| Poisson | `Poisson(lam)` |
+| Binomial | `Binomial(n, p)` |
+| Geometric | `Geometric(p)` |
+| Negative binomial | `NegativeBinomial(r, p)` |
+
+### The (a, b, 1) class
+
+The `(a, b, 1)` distributions are built from a base `(a, b, 0)` model:
 
 ```python
-from lossmodels.frequency import Poisson
-from lossmodels.severity import Lognormal
+from lossmodels import Poisson, NegativeBinomial, ZeroTruncated, ZeroModified, Logarithmic
+
+zt = ZeroTruncated(Poisson(2.0))                 # zero is impossible
+zm = ZeroModified(NegativeBinomial(3.0, 1/3), p0_modified=0.4)   # custom mass at zero
+lg = Logarithmic(beta=3.0)                       # no (a, b, 0) parent
+
+print(zt.mean(), zt.pmf(0))   # 0.0 mass at zero
+print(zm.mean(), zm.pmf(0))   # 0.4 at zero
+print(lg.mean())
+```
+
+| Distribution | Constructor | Notes |
+| --- | --- | --- |
+| Zero-truncated | `ZeroTruncated(base)` | removes the mass at zero of any `(a, b, 0)` model and renormalizes |
+| Zero-modified | `ZeroModified(base, p0_modified)` | places an arbitrary probability `p0_modified ∈ [0, 1)` at zero |
+| Logarithmic | `Logarithmic(beta)` | the limiting member with no `(a, b, 0)` parent |
+
+The wrappers respect the base model's probability parameterization; only
+`Logarithmic` uses `beta`. For a `beta`-parameterized geometric or negative
+binomial, set `p = 1 / (1 + beta)`.
+
+## Spliced severities
+
+`SplicedSeverity` joins a body distribution (renormalized below the threshold) to a
+tail distribution supported above it. The tail must satisfy `cdf(threshold) = 0`
+(e.g. a Type I `Pareto` with `theta` equal to the threshold), and the mixing
+`weight` is the probability mass assigned to the body.
+
+```python
+from lossmodels import Lognormal, Pareto, SplicedSeverity
+
+u = 50_000
+body = Lognormal(mu=10.0, sigma=0.8)
+tail = Pareto(alpha=2.5, theta=u)     # Type I tail, cdf(u) = 0
+
+spliced = SplicedSeverity(body=body, tail=tail, threshold=u, weight=body.cdf(u))
+print(spliced.mean(), spliced.quantile(0.99))
+```
+
+The result is itself a severity (`pdf`, `cdf`, `quantile`, `sample`, `mean`,
+`variance`), so a tail-corrected severity drops straight back into the aggregate
+and coverage tooling.
+
+## Empirical distributions
+
+```python
+from lossmodels import EmpiricalSeverity, EmpiricalFrequency
+
+sev = EmpiricalSeverity(claim_amounts)
+freq = EmpiricalFrequency(claim_counts)
+```
+
+Both expose the standard severity / frequency interface built from the raw data.
+
+## Coverage modifications
+
+Deductibles, limits, and layers each wrap a severity and are themselves severities,
+so they compose and feed any aggregate model.
+
+```python
+from lossmodels import Lognormal, Poisson, CollectiveRiskModel
 from lossmodels.coverage import OrdinaryDeductible, PolicyLimit, Layer
-from lossmodels.aggregate import CollectiveRiskModel
 
 base_sev = Lognormal(mu=10.0, sigma=0.8)
 
 with_deductible = OrdinaryDeductible(base_sev, d=10_000)
 with_limit = PolicyLimit(base_sev, u=50_000)
-layer = Layer(base_sev, d=10_000, u=40_000)
+layer = Layer(base_sev, d=10_000, u=40_000)     # pays the loss in the layer above d up to u
 
 model = CollectiveRiskModel(Poisson(lam=2.0), layer)
 print(model.mean())
 ```
 
-## Available Models
+| Modification | Constructor |
+| --- | --- |
+| Ordinary deductible | `OrdinaryDeductible(severity, d)` |
+| Policy limit | `PolicyLimit(severity, u)` |
+| Layer | `Layer(severity, d, u)` |
 
-### Frequency
+## Aggregate loss modeling
 
-- `Poisson`
-- `NegativeBinomial`
-- `Binomial`
-- `Geometric`
+### The collective-risk model
 
-### Severity
+`CollectiveRiskModel(frequency, severity)` is the main entry point. It exposes:
 
-- `Exponential`
-- `Gamma`
-- `Lognormal`
-- `Pareto`
-- `Weibull`
+| Method | Meaning |
+| --- | --- |
+| `mean()`, `variance()`, `std()` | aggregate moments |
+| `var(q)`, `tvar(q)` | Value-at-Risk and Tail-VaR at level `q` |
+| `stop_loss(d)` | stop-loss premium `E[(S − d)₊]` |
+| `limited_expected_value(d)` | `E[min(S, d)]` |
+| `frequency_mean()`, `severity_mean()` | component means |
+| `sample(size)` | simulate aggregate losses |
+| `summary()` | a one-call overview of the model |
 
-### Empirical
+### Panjer recursion and FFT
 
-- `EmpiricalFrequency`
-- `EmpiricalSeverity`
-
-### Coverage
-
-- `OrdinaryDeductible`
-- `PolicyLimit`
-- `Layer`
-
-## Aggregate Loss Methods
-
-The `aggregate` module supports multiple ways to analyze total loss.
-
-### Simulation
+For exact (discretized) aggregate distributions, discretize the severity and then
+recurse or transform:
 
 ```python
-samples = model.sample(100_000)
+from lossmodels import Poisson, Lognormal
+from lossmodels.aggregate import (
+    discretize_severity, panjer_recursion, fft_aggregate_poisson,
+)
+
+freq = Poisson(lam=3.0)
+sev = Lognormal(mu=8.0, sigma=0.7)
+
+sev_pmf = discretize_severity(sev, h=100.0, max_loss=500_000.0)
+agg_pmf = panjer_recursion(freq, sev_pmf, n_steps=5000)
+# FFT aggregation (Poisson frequency):
+agg_pmf_fft = fft_aggregate_poisson(freq, sev_pmf, n_steps=5000)
 ```
 
-### Panjer Recursion
+### Risk measures
+
+Distribution-level helpers operate on a simulated loss vector, and PMF-level
+helpers operate on a discretized aggregate PMF:
 
 ```python
-from lossmodels.aggregate import discretize_severity, panjer_recursion
+from lossmodels.aggregate import (
+    var, tvar, stop_loss, lev,                       # on a sample
+    var_from_pmf, tvar_from_pmf, stop_loss_from_pmf,  # on an aggregate PMF
+)
 
-pmf = discretize_severity(sev, h=100.0, max_loss=200_000.0)
-agg_pmf = panjer_recursion(freq, pmf, n_steps=5000)
+losses = model.sample(100_000)
+print(var(losses, 0.95), tvar(losses, 0.95), stop_loss(losses, 50_000), lev(losses, 50_000))
+
+print(var_from_pmf(agg_pmf, h=100.0, q=0.95))
+print(tvar_from_pmf(agg_pmf, h=100.0, q=0.95))
+print(stop_loss_from_pmf(agg_pmf, h=100.0, d=50_000.0))
 ```
 
-### FFT Aggregation
+## Estimation and model selection
+
+The `estimation` module provides MLE and method-of-moments fitters, fit
+diagnostics, goodness-of-fit statistics, and automatic best-fit selection.
 
 ```python
-from lossmodels.aggregate import fft_aggregate_poisson
+from lossmodels import (
+    fit_lognormal, fit_poisson,
+    fit_best_severity, fit_best_frequency,
+    goodness_of_fit, aic, bic,
+)
 
-agg_pmf = fft_aggregate_poisson(freq, pmf, n_steps=5000)
+sev_model = fit_lognormal(severity_data)
+freq_model = fit_poisson(count_data)
+
+best_sev = fit_best_severity(severity_data, criterion="aic")
+best_freq = fit_best_frequency(count_data, criterion="bic")
+
+print(best_sev["best_name"], best_sev["best_model"])
+print(best_freq["best_name"])
 ```
 
-### PMF-Based Risk Measures
+`fit_best_severity` / `fit_best_frequency` return a dict with `best_name`,
+`best_model`, `criterion`, `method`, and the full per-candidate `results`.
 
-```python
-from lossmodels.aggregate import var_from_pmf, tvar_from_pmf, stop_loss_from_pmf
+- **Severity fitters and selection candidates:** `exponential`, `gamma`,
+  `lognormal`, `pareto`, `weibull` (MLE or method of moments). Also available
+  individually: `fit_exponential`, `fit_gamma`, `fit_lognormal`, `fit_pareto`,
+  `fit_weibull`, plus the generic `fit_mle`.
+- **Frequency fitters and selection candidates:** `poisson`, `negbinomial`
+  (`fit_poisson`, `fit_negbinomial`).
+- **Diagnostics and goodness of fit:** `log_likelihood`, `aic`, `bic`,
+  `ks_statistic`, `anderson_darling`, `cramer_von_mises`, `tail_quantile_table`,
+  and `goodness_of_fit`.
 
-var95 = var_from_pmf(agg_pmf, h=100.0, q=0.95)
-tvar95 = tvar_from_pmf(agg_pmf, h=100.0, q=0.95)
-sl = stop_loss_from_pmf(agg_pmf, h=100.0, d=50_000.0)
-```
+## The actuarialpy ecosystem
 
-## Estimation and Model Selection
+`lossmodels` is the distribution-and-aggregation core of a small set of
+interoperating actuarial packages. Models built here plug into the others through
+their `.sample(size)` and `.mean()` interface:
 
-The `estimation` module includes:
-
-- MLE fitters for supported frequency and severity distributions
-- method-of-moments estimators
-- log-likelihood, AIC, and BIC diagnostics
-- `fit_best_severity(...)`
-- `fit_best_frequency(...)`
-
-Current automated model selection support includes:
-
-- Severity candidates: `exponential`, `gamma`, `lognormal`, `weibull`
-- Frequency candidates: `poisson`, `negbinomial`
+- **`risksim`** — portfolio simulation and aggregate reinsurance program
+  evaluation (layers, contract programs), consuming `lossmodels` severities and
+  frequencies.
+- **`extremeloss`** — extreme value theory: peaks-over-threshold / GPD tails,
+  block maxima / GEV, the Hill estimator, and threshold diagnostics. This is the
+  home of the extreme-value distributions, which is why they are not duplicated in
+  `lossmodels`.
 
 ## Examples
 
-The repository currently includes the following example scripts:
+The repository includes runnable example scripts, including:
 
-- `deductible_example.py`
-- `fit_and_compare_models.py`
-- `fit_and_simulate.py`
-- `layer_example.py`
-- `limit_example.py`
-- `panjer_vs_fft_vs_simulation.py`
-- `panjer_vs_simulation.py`
+- `fit_and_simulate.py`, `fit_and_compare_models.py`
+- `panjer_vs_simulation.py`, `panjer_vs_fft_vs_simulation.py`
+- `deductible_example.py`, `limit_example.py`, `layer_example.py`
 - `stop_loss_example.py`
 
 ## Testing
@@ -228,23 +417,14 @@ The repository currently includes the following example scripts:
 Run the test suite with:
 
 ```bash
-pytest -v
+pytest -q
 ```
 
-Run only non-slow tests with:
+Run only the fast tests with:
 
 ```bash
-pytest -v -m "not slow"
+pytest -q -m "not slow"
 ```
-
-## Project Scope
-
-`lossmodels` currently focuses on core actuarial material around frequency-severity modeling and aggregate loss methods, with readable implementations that are useful for:
-
-- learning actuarial loss models
-- prototyping insurance analytics workflows
-- validating calculations against textbook-style examples
-- building small actuarial tools on top of a reusable package
 
 ## License
 
