@@ -16,15 +16,13 @@ model-selection utilities. It is aimed at actuarial students, analysts, insuranc
 data scientists, and quantitative developers who want a lightweight library whose
 parameterizations line up with the standard references.
 
-The continuous-severity and discrete-frequency inventories follow the
-parameterizations in *Loss Models: From Data to Decisions* (Klugman, Panjer,
-Willmot), Appendices A and B — the same set used on the SOA **FAM** and **ASTAM**
-exam tables — so results can be checked directly against textbook and exam
-formulas.
+The continuous-severity and discrete-frequency inventories use the standard
+scale-parameterized forms common in actuarial loss modeling, so means, moments,
+and quantiles line up with the formulas you would compute by hand.
 
 ## Highlights
 
-- **Severity models** — the full Klugman continuous inventory: lognormal, gamma,
+- **Severity models** — a comprehensive continuous inventory: lognormal, gamma,
   Weibull, exponential and their inverses; the transformed-beta family (Burr,
   inverse Burr, generalized Pareto, Pareto/Lomax, inverse Pareto, loglogistic,
   paralogistic, inverse paralogistic); inverse Gaussian, log-t,
@@ -98,12 +96,12 @@ Every model name is importable directly from the top level
 (`from lossmodels import Burr, ZeroTruncated, ...`) or from its submodule
 (`from lossmodels.severity import Burr`).
 
-### Using the exam-table distributions
+### Using the extended distribution catalog
 
 ```python
 from lossmodels import Burr, ParetoII, ZeroTruncated, Poisson, CollectiveRiskModel
 
-sev = ParetoII(alpha=3.0, theta=1000.0)        # FAM/ASTAM "Pareto" (Type II / Lomax)
+sev = ParetoII(alpha=3.0, theta=1000.0)        # the two-parameter "Pareto" (Type II / Lomax)
 freq = ZeroTruncated(Poisson(2.0))             # an (a, b, 1) frequency
 
 model = CollectiveRiskModel(freq, sev)
@@ -130,7 +128,7 @@ aggregate, coverage, and estimation tooling:
 | `limited_expected_value(d)` | `E[min(X, d)]` |
 | `excess_loss(d)` | `E[(X − d)₊]`, the expected cost per loss above `d` |
 
-Moments are returned from the closed-form Klugman expressions and **raise a
+Moments are returned from closed-form expressions and **raise a
 `ValueError` outside their existence range** (e.g. a Pareto mean with `alpha ≤ 1`),
 rather than silently returning a wrong or infinite number. A few distributions
 (inverse Pareto, inverse exponential, log-t) have no finite positive moments, so
@@ -152,7 +150,7 @@ their `mean`/`variance` always raise.
 | --- | --- |
 | Burr (Type XII / Singh–Maddala) | `Burr(alpha, theta, gamma)` |
 | Inverse Burr (Dagum) | `InverseBurr(tau, theta, gamma)` |
-| Generalized Pareto (Klugman) | `GeneralizedPareto(alpha, theta, tau)` |
+| Generalized Pareto (transformed-beta) | `GeneralizedPareto(alpha, theta, tau)` |
 | Pareto (Type II / Lomax) | `ParetoII(alpha, theta)` |
 | Inverse Pareto | `InversePareto(tau, theta)` |
 | Loglogistic (Fisk) | `Loglogistic(gamma, theta)` |
@@ -184,20 +182,20 @@ their `mean`/`variance` always raise.
 
 ### Parameterization notes
 
-A few naming points matter when matching exam answers:
+A few naming points matter:
 
-- **Two Paretos.** `ParetoII(alpha, theta)` is the FAM/ASTAM two-parameter
+- **Two Paretos.** `ParetoII(alpha, theta)` is the two-parameter
   "Pareto" (Type II / Lomax, support `x > 0`). The classic `Pareto(alpha, theta)`
-  is the **Type I** distribution (support `x ≥ theta`), which the FAM tables list
-  as "Single-Parameter Pareto"; it is also exposed under that name as
+  is the **Type I** distribution (support `x ≥ theta`), commonly called the
+  single-parameter Pareto; it is also exposed under that name as
   `SingleParameterPareto`.
-- **`GeneralizedPareto` here is the Klugman three-parameter transformed-beta
+- **`GeneralizedPareto` here is the three-parameter transformed-beta
   distribution**, not the extreme-value GPD used in peaks-over-threshold tail
   fitting. The extreme-value distributions (GEV, Gumbel, Fréchet, GPD, Hill) live
   in the companion `extremeloss` package.
 - `Exponential` is parameterized by `rate` (= `1/theta`) and `Weibull` by shape
-  `k` and scale `lam`; the FAM-named additions follow Klugman's scale convention
-  with parameter `theta`.
+  `k` and scale `lam`; the transformed-beta and transformed-gamma families follow
+  the scale-parameter (`theta`) convention.
 
 ## Frequency models
 
