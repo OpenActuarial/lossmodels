@@ -9,7 +9,7 @@ A Python library for actuarial loss modeling using frequency–severity methods.
 
 ## Overview
 
-`lossmodels` is a readable, NumPy/SciPy-backed implementation of the core
+**`lossmodels`** is a readable, NumPy/SciPy-backed implementation of the core
 loss-modeling toolkit: a large catalog of severity and frequency distributions,
 aggregate (collective-risk) loss models, coverage modifications, and fitting and
 model-selection utilities. It is aimed at actuarial students, analysts, insurance
@@ -387,9 +387,9 @@ print(best_freq["best_name"])
   `ks_statistic`, `anderson_darling`, `cramer_von_mises`, `tail_quantile_table`,
   and `goodness_of_fit`.
 
-## The actuarialpy ecosystem
+## The OpenActuarial ecosystem
 
-`lossmodels` is the distribution-and-aggregation core of a small set of
+**`lossmodels`** is the distribution-and-aggregation core of a small set of
 interoperating actuarial packages. Models built here plug into the others through
 their `.sample(size)` and `.mean()` interface:
 
