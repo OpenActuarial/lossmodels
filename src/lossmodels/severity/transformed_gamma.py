@@ -12,6 +12,7 @@ their inverses. Parameter -> SciPy mapping (verified against the table moments):
 from math import gamma as _G
 
 import numpy as np
+from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import invgamma, invweibull
 
 from .base import SeverityModel
@@ -48,10 +49,10 @@ class InverseGamma(SeverityModel):
             raise ValueError("Variance does not exist for alpha <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -96,10 +97,10 @@ class InverseWeibull(SeverityModel):
             raise ValueError("Variance does not exist for tau <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -145,10 +146,10 @@ class InverseExponential(SeverityModel):
             "Variance does not exist for the inverse exponential distribution."
         )
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)

@@ -45,16 +45,19 @@ def tvar_from_pmf(pmf, h: float, q: float):
 
     pmf = _validate_pmf(pmf)
     x = h * np.arange(len(pmf))
+    cdf = np.cumsum(pmf)
 
-    var = var_from_pmf(pmf, h, q)
+    idx = np.searchsorted(cdf, q)
+    v = float(x[idx])
+    cdf_at_var = float(cdf[idx])
 
-    tail_mask = x >= var
-    tail_prob = pmf[tail_mask].sum()
-
-    if tail_prob == 0:
-        return var
-
-    return float(np.sum(x[tail_mask] * pmf[tail_mask]) / tail_prob)
+    # Average-quantile definition on a lattice with an atom at VaR:
+    #   TVaR_q = [ sum_{x > v} x * p(x) + v * (F(v) - q) ] / (1 - q)
+    # The atom at v contributes only the probability mass F(v) - q that lies
+    # above level q, which is what makes TVaR coherent on discrete supports.
+    above = x > v
+    partial_tail_ev = float(np.sum(x[above] * pmf[above]))
+    return (partial_tail_ev + v * (cdf_at_var - q)) / (1.0 - q)
 
 
 def stop_loss_from_pmf(pmf, h: float, d: float):

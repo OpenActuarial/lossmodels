@@ -8,6 +8,7 @@ probability ``p0_modified`` at zero, rescaling the rest (Loss Models B.3.2):
 """
 
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 
 from .base import FrequencyModel
 from .truncated import ZeroTruncated
@@ -78,14 +79,15 @@ class ZeroModified(FrequencyModel):
             + self.p0_modified * (1.0 - self.p0_modified) * ztm ** 2
         )
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        keep = np.random.random(size) >= self.p0_modified
+        rng = None if rng is None else resolve_rng(rng)
+        keep = resolve_rng(rng).random(size) >= self.p0_modified
         n_keep = int(keep.sum())
         out = np.zeros(size, dtype=int)
         if n_keep:
-            out[keep] = ZeroTruncated(self.base).sample(n_keep)
+            out[keep] = ZeroTruncated(self.base).sample(n_keep, rng=rng)
         return out
 
     def __repr__(self) -> str:

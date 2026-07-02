@@ -8,6 +8,7 @@ Lognormal already lives in ``lossmodels.Lognormal``.
 """
 
 import numpy as np
+from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import invgauss, pareto, t as student_t
 
 from .base import SeverityModel
@@ -36,10 +37,10 @@ class InverseGaussian(SeverityModel):
     def variance(self) -> float:
         return self.mu ** 3 / self.theta
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -81,10 +82,10 @@ class LogT(SeverityModel):
     def variance(self) -> float:
         raise ValueError("Positive moments do not exist for the log-t distribution.")
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return np.exp(self.sigma * self._t.rvs(size=size) + self.mu)
+        return np.exp(self.sigma * self._t.rvs(size=size, random_state=scipy_random_state(rng)) + self.mu)
 
     def pdf(self, x):
         def f(v):
@@ -150,10 +151,10 @@ class SingleParameterPareto(SeverityModel):
             raise ValueError("Variance does not exist for alpha <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)

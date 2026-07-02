@@ -2,10 +2,14 @@ import numpy as np
 
 from .diagnostics import aic, bic
 from .mle import (
+    fit_burr,
     fit_exponential,
     fit_gamma,
+    fit_inverse_gamma,
+    fit_loglogistic,
     fit_lognormal,
     fit_pareto,
+    fit_paretoII,
     fit_weibull,
 )
 from .moments import (
@@ -23,6 +27,11 @@ SEVERITY_MLE_FITTERS = {
     "lognormal": (fit_lognormal, 2),
     "pareto": (fit_pareto, 2),
     "weibull": (fit_weibull, 2),
+    # FAM / ASTAM families (0.6.0); all support truncation/censoring
+    "paretoII": (fit_paretoII, 2),
+    "loglogistic": (fit_loglogistic, 2),
+    "inverse_gamma": (fit_inverse_gamma, 2),
+    "burr": (fit_burr, 3),
 }
 
 SEVERITY_MOMENT_FITTERS = {
@@ -34,7 +43,8 @@ SEVERITY_MOMENT_FITTERS = {
 }
 
 
-def fit_best_severity(data, candidates=None, method="mle", criterion="aic"):
+def fit_best_severity(data, candidates=None, method="mle", criterion="aic",
+                      truncation=None, censored=None):
     """
     Fit a set of severity models and return the best one by AIC or BIC.
 
@@ -69,6 +79,8 @@ def fit_best_severity(data, candidates=None, method="mle", criterion="aic"):
 
     if method not in {"mle", "moments"}:
         raise ValueError("method must be 'mle' or 'moments'.")
+    if (truncation is not None or censored is not None) and method != "mle":
+        raise ValueError("truncation/censoring is only supported with method='mle'.")
     if criterion not in {"aic", "bic"}:
         raise ValueError("criterion must be 'aic' or 'bic'.")
 
@@ -86,8 +98,15 @@ def fit_best_severity(data, candidates=None, method="mle", criterion="aic"):
         fitter, k = fitters[name]
 
         try:
-            model = fitter(data)
-            score = aic(model, data, k=k) if criterion == "aic" else bic(model, data, k=k)
+            if truncation is not None or censored is not None:
+                model = fitter(data, truncation=truncation, censored=censored)
+            else:
+                model = fitter(data)
+            score = (
+                aic(model, data, k=k, truncation=truncation, censored=censored)
+                if criterion == "aic"
+                else bic(model, data, k=k, truncation=truncation, censored=censored)
+            )
 
             results.append({
                 "name": name,

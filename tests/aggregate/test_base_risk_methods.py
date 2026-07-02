@@ -24,7 +24,8 @@ def test_aggregate_model_var_uses_empirical_definition():
     assert np.isclose(model.var(0.5, n_sim=6), 2.0)
 
 
-def test_aggregate_model_tvar_includes_var_observations():
+def test_aggregate_model_tvar_weights_atom_at_var_correctly():
     model = DummyAggregateModel([0, 1, 2, 2, 100])
-    expected = np.mean(np.array([2, 2, 100], dtype=float))
-    assert np.isclose(model.tvar(0.6, n_sim=5), expected)
+    # Average-quantile TVaR: the atom at VaR = 2 contributes only the mass
+    # above level q, giving (2 + 100) / (5 * 0.4) = 51.
+    assert np.isclose(model.tvar(0.6, n_sim=5), 51.0)

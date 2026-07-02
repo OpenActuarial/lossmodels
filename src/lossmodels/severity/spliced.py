@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.integrate import quad
 
 from .base import SeverityModel
@@ -129,19 +130,24 @@ class SplicedSeverity(SeverityModel):
         return float(out[0]) if arr.ndim == 0 else out.reshape(arr.shape)
 
     # --- sampling and moments ---
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        n_body = int(np.random.binomial(size, self.weight))
+        rng = None if rng is None else resolve_rng(rng)
+        gen = resolve_rng(rng)
+        n_body = int(gen.binomial(size, self.weight))
         n_tail = size - n_body
         parts = []
         if n_body > 0:
-            u = np.random.uniform(0.0, self._Fb_u, size=n_body)
+            u = gen.uniform(0.0, self._Fb_u, size=n_body)
             parts.append(np.asarray(self.body.quantile(u), dtype=float).reshape(-1))
         if n_tail > 0:
-            parts.append(np.asarray(self.tail.sample(n_tail), dtype=float).reshape(-1))
+            tail_draws = (
+                self.tail.sample(n_tail) if rng is None else self.tail.sample(n_tail, rng=rng)
+            )
+            parts.append(np.asarray(tail_draws, dtype=float).reshape(-1))
         out = np.concatenate(parts) if parts else np.empty(0)
-        np.random.shuffle(out)
+        gen.shuffle(out)
         return out
 
     def mean(self) -> float:

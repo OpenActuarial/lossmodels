@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 
 from .base import AggregateModel
 from ..frequency.base import FrequencyModel
@@ -24,19 +25,34 @@ class CollectiveRiskModel(AggregateModel):
         self.frequency = frequency
         self.severity = severity
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """
         Generate random samples of aggregate loss.
+
+        ``rng`` may be ``None`` (legacy global ``numpy.random`` state), an
+        ``int`` seed, or a ``numpy.random.Generator``; a seed or generator is
+        threaded through both the frequency and severity draws so the whole
+        aggregate simulation is reproducible.
         """
         if size <= 0:
             raise ValueError("size must be positive")
 
-        counts = self.frequency.sample(size=size)
+        rng = None if rng is None else resolve_rng(rng)
+        counts = (
+            self.frequency.sample(size=size)
+            if rng is None
+            else self.frequency.sample(size=size, rng=rng)
+        )
         aggregate_losses = np.zeros(size, dtype=float)
 
         for i, n_claims in enumerate(counts):
             if n_claims > 0:
-                aggregate_losses[i] = np.sum(self.severity.sample(size=int(n_claims)))
+                draws = (
+                    self.severity.sample(size=int(n_claims))
+                    if rng is None
+                    else self.severity.sample(size=int(n_claims), rng=rng)
+                )
+                aggregate_losses[i] = np.sum(draws)
 
         return aggregate_losses
 

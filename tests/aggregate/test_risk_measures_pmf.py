@@ -28,11 +28,13 @@ def test_tvar_from_pmf_uses_tail_at_or_above_var():
     assert np.isclose(tvar, expected)
 
 
-def test_tvar_from_pmf_matches_discrete_tail_definition_with_mass_at_var():
+def test_tvar_from_pmf_matches_average_quantile_definition_with_mass_at_var():
     pmf = np.array([0.2, 0.3, 0.4, 0.1])
     q = 0.5
-    # VaR = 1, TVaR = E[X | X >= 1]
-    expected = (1.0 * 0.3 + 2.0 * 0.4 + 3.0 * 0.1) / (0.3 + 0.4 + 0.1)
+    # VaR = 1 with F(1) = 0.5 = q, so the atom at VaR carries zero weight:
+    # TVaR = [sum_{x>1} x p(x) + 1 * (F(1) - q)] / (1 - q)
+    #      = (2*0.4 + 3*0.1) / 0.5 = 2.2.
+    expected = (2.0 * 0.4 + 3.0 * 0.1) / 0.5
     assert np.isclose(tvar_from_pmf(pmf, h=1.0, q=q), expected)
 
 

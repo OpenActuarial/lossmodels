@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+- Every `sample` method (severity, frequency, empirical, spliced, coverage
+  wrappers, `CollectiveRiskModel`) accepts `rng`: `None` (legacy global
+  `numpy.random` state, backward compatible with `np.random.seed`), an `int`
+  seed, or a `numpy.random.Generator`. A seed or generator threads through
+  frequency and severity draws so aggregate simulations are reproducible.
+- `AggregateModel.var`, `tvar`, `stop_loss`, and `limited_expected_value`
+  accept `rng` for reproducible Monte Carlo estimates.
+- `lossmodels.utils.random` with `RNGLike`, `resolve_rng`, and
+  `scipy_random_state`.
+- **Fitting under left truncation and right censoring** (deductibles and
+  policy limits), the Loss Models individual-data likelihood
+  `sum[d_i log f(x_i) + (1-d_i) log S(x_i) - log S(t_i)]`:
+  every severity fitter (`fit_exponential`, `fit_gamma`, `fit_lognormal`,
+  `fit_pareto`, `fit_weibull`, and the new fitters below) accepts
+  `truncation=` and `censored=`; complete-data code paths are unchanged.
+  Exponential and Pareto Type I keep closed forms in the censored/truncated
+  case (for Type I under truncation, theta is unidentifiable and pinned at
+  the smallest observable point, documented in the docstring).
+  `payments_to_ground_up` converts per-payment data (payments net of a
+  deductible, capped at a maximum payment) into the `(values, truncation,
+  censored)` triple; `censored_log_likelihood` and `fit_mle_censored` expose
+  the general machinery; `kaplan_meier` gives the product-limit survival
+  estimate under left truncation and right censoring.
+- **Four new severity fitters** with the same truncation/censoring support:
+  `fit_paretoII` (Lomax -- the FAM/ASTAM "Pareto"), `fit_loglogistic`,
+  `fit_inverse_gamma`, and `fit_burr`, all registered with
+  `fit_best_severity` (the default MLE candidate set grows from five to nine
+  families; failed candidates are skipped as before).
+- **Truncation/censoring-aware diagnostics**: `log_likelihood`, `aic`, `bic`,
+  and `goodness_of_fit` accept `truncation=`/`censored=` and use the
+  individual-data likelihood; new `pit_values` returns the
+  probability-integral transform `(F(x)-F(t))/(1-F(t))`, exactly Uniform(0,1)
+  under the true model for uncensored data with arbitrary truncation points;
+  `ks_statistic` uses the PIT under truncation and a Kaplan-Meier comparison
+  when censoring is present (`anderson_darling`/`cramer_von_mises` support
+  truncation and explicitly reject censored data, where the PIT of the
+  uncensored subsample is uniform only on a sub-interval of (0, 1)).
+- `fit_best_severity` accepts `truncation=`/`censored=` (MLE method only)
+  and scores candidates with the censored-data AIC/BIC.
+
+### Changed
+- **Breaking:** `discretize_severity` defaults to `method="midpoint"`
+  (previously `"upper"`). Midpoint is the standard, nearly unbiased choice for
+  Panjer/FFT input; the `"upper"` bound method biases the discretized mean low
+  by roughly h/2 per claim. Pass `method="upper"` explicitly to reproduce old
+  results.
+- **Breaking (numeric):** `Layer.variance`, `OrdinaryDeductible.variance`, and
+  `PolicyLimit.variance` are now computed deterministically from
+  E[Y^2] = integral of 2 y S(y) dy instead of by simulation. Results are exact
+  and repeatable; `n_sim` is retained for backward compatibility but ignored.
+- **Breaking (numeric):** empirical `var` / `tvar` and the PMF-based
+  `var_from_pmf` / `tvar_from_pmf` follow the ecosystem-wide convention:
+  VaR is the inverted-CDF order statistic and TVaR the Acerbi-Tasche
+  average-quantile estimator, so TVaR(q) >= VaR(q) always and PMF atoms at the
+  VaR are weighted correctly.
+
+### Fixed
+- `tvar_from_pmf` previously overweighted the atom at the VaR when tail
+  probability exceeded 1 - q.
+
 ## 0.5.0
 
 ### Added

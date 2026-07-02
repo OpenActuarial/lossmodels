@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import binom
 
 from .base import FrequencyModel
@@ -26,8 +27,8 @@ class Binomial(FrequencyModel):
         self.n = n
         self.p = p
 
-    def sample(self, size: int = 1) -> np.ndarray:
-        return np.random.binomial(self.n, self.p, size=size)
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
+        return resolve_rng(rng).binomial(self.n, self.p, size=size)
 
     def mean(self) -> float:
         return self.n * self.p

@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import nbinom
 
 from .base import FrequencyModel
@@ -40,14 +41,14 @@ class NegativeBinomial(FrequencyModel):
         self.r = r
         self.p = p
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """
         Generate random samples of claim counts.
         """
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return np.random.negative_binomial(self.r, self.p, size=size)
+        return resolve_rng(rng).negative_binomial(self.r, self.p, size=size)
 
     def mean(self) -> float:
         """

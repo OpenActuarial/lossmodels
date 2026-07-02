@@ -1,7 +1,9 @@
 import numpy as np
 
+from .censoring import censored_log_likelihood, _prepare, kaplan_meier
 
-def log_likelihood(model, data) -> float:
+
+def log_likelihood(model, data, truncation=None, censored=None) -> float:
     """
     Compute the log-likelihood of observed data under a fitted model.
 
@@ -12,12 +14,19 @@ def log_likelihood(model, data) -> float:
         or pmf(x) method for discrete models.
     data : array-like
         Observed data.
+    truncation, censored : array-like, optional
+        Per-observation left-truncation points and right-censoring flags.
+        When either is given the individual-data likelihood of
+        :func:`lossmodels.estimation.censored_log_likelihood` is used
+        (requires ``model.cdf``).
 
     Returns
     -------
     float
         Log-likelihood value.
     """
+    if truncation is not None or censored is not None:
+        return censored_log_likelihood(model, data, truncation, censored)
     data = np.asarray(data)
     if data.size == 0:
         raise ValueError("data must not be empty.")
@@ -43,7 +52,7 @@ def log_likelihood(model, data) -> float:
     return float(np.sum(np.log(vals)))
 
 
-def aic(model, data, k: int) -> float:
+def aic(model, data, k: int, truncation=None, censored=None) -> float:
     """
     Compute Akaike Information Criterion.
 
@@ -64,14 +73,14 @@ def aic(model, data, k: int) -> float:
     if k <= 0:
         raise ValueError("k must be positive.")
 
-    ll = log_likelihood(model, data)
+    ll = log_likelihood(model, data, truncation=truncation, censored=censored)
     if not np.isfinite(ll):
         return float(np.inf)
 
     return float(2 * k - 2 * ll)
 
 
-def bic(model, data, k: int) -> float:
+def bic(model, data, k: int, truncation=None, censored=None) -> float:
     """
     Compute Bayesian Information Criterion.
 
@@ -95,7 +104,7 @@ def bic(model, data, k: int) -> float:
     if k <= 0:
         raise ValueError("k must be positive.")
 
-    ll = log_likelihood(model, data)
+    ll = log_likelihood(model, data, truncation=truncation, censored=censored)
     if not np.isfinite(ll):
         return float(np.inf)
 
@@ -135,12 +144,64 @@ def _eval_cdf(model, x: np.ndarray) -> np.ndarray:
         return np.array([model.cdf(float(v)) for v in x], dtype=float)
 
 
-def ks_statistic(model, data) -> float:
-    """Kolmogorov-Smirnov distance sup_x |F_n(x) - F(x)| (smaller is better).
+def pit_values(model, data, truncation=None, censored=None) -> np.ndarray:
+    r"""Probability-integral-transform values for the *uncensored* observations.
+
+    Each uncensored ground-up value :math:`x_i` with truncation point
+    :math:`t_i` maps to
+
+    .. math:: u_i = \frac{F(x_i) - F(t_i)}{1 - F(t_i)},
+
+    which is Uniform(0, 1) under a correctly specified model, whatever the
+    (possibly heterogeneous) truncation points. Requires fully uncensored
+    data: dropping censored observations would leave the remaining PIT values
+    uniform only on a sub-interval of (0, 1), so for censored data use
+    :func:`ks_statistic`, which compares against the Kaplan-Meier estimate
+    instead.
+    """
+    values, trunc, cens = _prepare(data, truncation, censored)
+    if np.any(cens):
+        raise ValueError(
+            "pit_values requires fully uncensored data: censored observations "
+            "carry no exact value, and dropping them leaves the remainder "
+            "uniform only on a sub-interval of (0, 1). For censored data use "
+            "ks_statistic, which compares against the Kaplan-Meier estimate."
+        )
+    if values.size == 0:
+        raise ValueError("no observations to transform.")
+    f_x = _eval_cdf(model, values)
+    f_t = np.where(trunc > 0, _eval_cdf(model, trunc), 0.0)
+    denom = np.maximum(1.0 - f_t, 1e-300)
+    u = (f_x - f_t) / denom
+    return np.clip(u, 0.0, 1.0)
+
+
+def ks_statistic(model, data, truncation=None, censored=None) -> float:
+    """Kolmogorov-Smirnov distance ``sup_x |F_n(x) - F(x)|`` (smaller is better).
 
     Most sensitive in the body of the distribution. See the module note on
-    estimated-parameter p-values.
+    estimated-parameter p-values. With ``truncation`` only, the statistic is
+    computed on the PIT sample of :func:`pit_values` against the Uniform(0, 1)
+    cdf -- exact under heterogeneous truncation. With censoring present, it is
+    the sup-distance between the Kaplan-Meier estimate and the model cdf, both
+    conditional on exceeding the smallest truncation point.
     """
+    if censored is not None and np.any(np.asarray(censored, dtype=bool)):
+        values, trunc, cens = _prepare(data, truncation, censored)
+        times, surv = kaplan_meier(values, trunc, cens)
+        t_min = float(np.min(trunc))
+        f_t = float(_eval_cdf(model, np.array([t_min]))[0]) if t_min > 0 else 0.0
+        denom = max(1.0 - f_t, 1e-300)
+        f_model = (_eval_cdf(model, times) - f_t) / denom  # conditional on X > t_min
+        f_km = 1.0 - surv
+        f_km_left = np.concatenate([[0.0], f_km[:-1]])
+        return float(np.max(np.maximum(np.abs(f_km - f_model), np.abs(f_km_left - f_model))))
+    if truncation is not None:
+        f = np.sort(pit_values(model, data, truncation, None))
+        n = f.size
+        d_plus = np.max(np.arange(1, n + 1) / n - f)
+        d_minus = np.max(f - np.arange(0, n) / n)
+        return float(max(d_plus, d_minus))
     x = _sorted_data(data)
     n = x.size
     f = _eval_cdf(model, x)
@@ -149,12 +210,25 @@ def ks_statistic(model, data) -> float:
     return float(max(d_plus, d_minus))
 
 
-def anderson_darling(model, data) -> float:
+def anderson_darling(model, data, truncation=None, censored=None) -> float:
     """Anderson-Darling statistic A^2 (smaller is better).
 
     Weights the tails more than KS, so it is the better whole-distribution
-    statistic for heavy-tailed loss data.
+    statistic for heavy-tailed loss data. With ``truncation`` the statistic
+    is computed on the (exactly uniform) PIT sample of :func:`pit_values`;
+    censored data are not supported -- use :func:`ks_statistic`.
     """
+    if censored is not None and np.any(np.asarray(censored, dtype=bool)):
+        raise ValueError(
+            "anderson_darling does not support censored data; use "
+            "ks_statistic, which compares against the Kaplan-Meier estimate."
+        )
+    if truncation is not None:
+        f = np.clip(np.sort(pit_values(model, data, truncation, None)), 1e-12, 1.0 - 1e-12)
+        n = f.size
+        i = np.arange(1, n + 1)
+        srt = np.sum((2 * i - 1) * (np.log(f) + np.log(1.0 - f[::-1])))
+        return float(-n - srt / n)
     x = _sorted_data(data)
     n = x.size
     f = np.clip(_eval_cdf(model, x), 1e-12, 1.0 - 1e-12)
@@ -163,8 +237,23 @@ def anderson_darling(model, data) -> float:
     return float(-n - s / n)
 
 
-def cramer_von_mises(model, data) -> float:
-    """Cramer-von Mises statistic W^2 (smaller is better)."""
+def cramer_von_mises(model, data, truncation=None, censored=None) -> float:
+    """Cramer-von Mises statistic W^2 (smaller is better).
+
+    With ``truncation`` the statistic is computed on the (exactly uniform)
+    PIT sample of :func:`pit_values`; censored data are not supported -- use
+    :func:`ks_statistic`.
+    """
+    if censored is not None and np.any(np.asarray(censored, dtype=bool)):
+        raise ValueError(
+            "cramer_von_mises does not support censored data; use "
+            "ks_statistic, which compares against the Kaplan-Meier estimate."
+        )
+    if truncation is not None:
+        f = np.sort(pit_values(model, data, truncation, None))
+        n = f.size
+        i = np.arange(1, n + 1)
+        return float(1.0 / (12.0 * n) + np.sum((f - (2 * i - 1) / (2.0 * n)) ** 2))
     x = _sorted_data(data)
     n = x.size
     f = _eval_cdf(model, x)
@@ -187,7 +276,10 @@ def tail_quantile_table(model, data, probs=(0.90, 0.95, 0.99, 0.995)) -> list:
         raise ValueError("data must not be empty.")
     rows = []
     for p in probs:
-        emp = float(np.quantile(data, p))
+        # Inverted-CDF quantile: the same estimator the ecosystem's var/tvar
+        # use, so the tail diagnostic is measured against what will actually
+        # be computed downstream.
+        emp = float(np.quantile(data, p, method="inverted_cdf"))
         fit = float(model.quantile(p))
         rows.append({
             "prob": float(p),
@@ -199,20 +291,39 @@ def tail_quantile_table(model, data, probs=(0.90, 0.95, 0.99, 0.995)) -> list:
     return rows
 
 
-def goodness_of_fit(model, data, k: int) -> dict:
+def goodness_of_fit(model, data, k: int, truncation=None, censored=None) -> dict:
     """One-call fit report combining relative and absolute measures.
 
     Returns ``n``, ``log_likelihood``, ``aic``, ``bic`` (relative -- compare
     across candidates) and ``ks``, ``anderson_darling``, ``cramer_von_mises``
     (absolute distance-to-empirical -- smaller is better). See the module note
     on the estimated-parameter caveat for the distance statistics.
+
+    With ``truncation``/``censored``, the likelihood-based measures use the
+    individual-data likelihood; ``ks`` compares against the PIT sample
+    (truncation only) or the Kaplan-Meier estimate (censoring present), and
+    ``anderson_darling``/``cramer_von_mises`` are reported as NaN under
+    censoring, where they are not defined here. ``n_uncensored`` is added to
+    the report.
     """
-    return {
+    has_censoring = censored is not None and np.any(np.asarray(censored, dtype=bool))
+    out = {
         "n": int(np.asarray(data).size),
-        "log_likelihood": log_likelihood(model, data),
-        "aic": aic(model, data, k=k),
-        "bic": bic(model, data, k=k),
-        "ks": ks_statistic(model, data),
-        "anderson_darling": anderson_darling(model, data),
-        "cramer_von_mises": cramer_von_mises(model, data),
+        "log_likelihood": log_likelihood(model, data, truncation=truncation, censored=censored),
+        "aic": aic(model, data, k=k, truncation=truncation, censored=censored),
+        "bic": bic(model, data, k=k, truncation=truncation, censored=censored),
+        "ks": ks_statistic(model, data, truncation=truncation, censored=censored),
+        "anderson_darling": (
+            float("nan") if has_censoring
+            else anderson_darling(model, data, truncation=truncation, censored=censored)
+        ),
+        "cramer_von_mises": (
+            float("nan") if has_censoring
+            else cramer_von_mises(model, data, truncation=truncation, censored=censored)
+        ),
     }
+    if truncation is not None or censored is not None:
+        cens = np.zeros(int(np.asarray(data).size), dtype=bool) if censored is None \
+            else np.broadcast_to(np.asarray(censored, dtype=bool), np.asarray(data).shape)
+        out["n_uncensored"] = int(np.sum(~cens))
+    return out

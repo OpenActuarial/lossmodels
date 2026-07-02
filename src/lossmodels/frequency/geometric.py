@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import geom
 
 from .base import FrequencyModel
@@ -30,8 +31,8 @@ class Geometric(FrequencyModel):
 
         self.p = p
 
-    def sample(self, size: int = 1) -> np.ndarray:
-        return np.random.geometric(self.p, size=size) - 1
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
+        return resolve_rng(rng).geometric(self.p, size=size) - 1
 
     def mean(self) -> float:
         return (1 - self.p) / self.p

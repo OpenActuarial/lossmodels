@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike
 
 from abc import ABC, abstractmethod
 from scipy.integrate import quad
@@ -17,7 +18,7 @@ class SeverityModel(ABC):
     """
 
     @abstractmethod
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """Generate random loss samples"""
         pass
 

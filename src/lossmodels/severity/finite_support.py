@@ -9,6 +9,7 @@ Both are supported on (0, theta) with theta a known scale parameter.
 from math import gamma as _G
 
 import numpy as np
+from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import beta as beta_dist
 
 from .base import SeverityModel
@@ -45,10 +46,10 @@ class Beta(SeverityModel):
     def variance(self) -> float:
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -67,7 +68,8 @@ class GeneralizedBeta(SeverityModel):
     """Generalized beta severity on (0, theta).
 
     X ~ GeneralizedBeta(a, b, theta, tau), support 0 < x < theta, defined by
-    U = (X/theta)^tau ~ Beta(a, b). Equivalently X = theta * U^(1/tau).
+    U = (X/theta)^tau ~ Beta(a, b). Equivalently X = theta * U^(1/tau)::
+
         F(x) = Beta(a, b; (x/theta)^tau)
         E[X^k] = theta^k Gamma(a+b) Gamma(a + k/tau) / (Gamma(a) Gamma(a + b + k/tau)),
                  k > -a*tau.
@@ -96,10 +98,10 @@ class GeneralizedBeta(SeverityModel):
     def variance(self) -> float:
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self.theta * self._b.rvs(size=size) ** (1.0 / self.tau)
+        return self.theta * self._b.rvs(size=size, random_state=scipy_random_state(rng)) ** (1.0 / self.tau)
 
     def pdf(self, x):
         def f(v):

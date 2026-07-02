@@ -1,8 +1,18 @@
+from .censoring import (
+    censored_log_likelihood,
+    kaplan_meier,
+    fit_mle_censored,
+    payments_to_ground_up,
+)
 from .mle import (
+    fit_burr,
     fit_exponential,
     fit_gamma,
     fit_lognormal,
+    fit_inverse_gamma,
+    fit_loglogistic,
     fit_pareto,
+    fit_paretoII,
     fit_poisson,
     fit_weibull,
     fit_negbinomial,
@@ -19,6 +29,7 @@ from .moments import (
 )
 from .diagnostics import (
     log_likelihood,
+    pit_values,
     aic,
     bic,
     ks_statistic,
@@ -31,7 +42,15 @@ from .model_selection import fit_best_severity
 from .frequency_selection import fit_best_frequency
 
 __all__ = [
+    "censored_log_likelihood",
+    "kaplan_meier",
+    "fit_mle_censored",
+    "payments_to_ground_up",
+    "fit_burr",
     "fit_exponential",
+    "fit_inverse_gamma",
+    "fit_loglogistic",
+    "fit_paretoII",
     "fit_gamma",
     "fit_lognormal",
     "fit_poisson",
@@ -47,6 +66,7 @@ __all__ = [
     "fit_weibull_moments",
     "fit_negbinomial_moments",
     "log_likelihood",
+    "pit_values",
     "aic",
     "bic",
     "ks_statistic",

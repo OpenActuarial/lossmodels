@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from ..utils.random import RNGLike
 
 
 class FrequencyModel(ABC):
@@ -13,7 +14,7 @@ class FrequencyModel(ABC):
     """
 
     @abstractmethod
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """
         Generate random samples of claim counts.
 

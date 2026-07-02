@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import lognorm
 
 from .base import SeverityModel
@@ -29,11 +30,11 @@ class Lognormal(SeverityModel):
         self.mu = mu
         self.sigma = sigma
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return np.random.lognormal(mean=self.mu, sigma=self.sigma, size=size)
+        return resolve_rng(rng).lognormal(mean=self.mu, sigma=self.sigma, size=size)
 
     def mean(self) -> float:
         return float(np.exp(self.mu + 0.5 * self.sigma ** 2))

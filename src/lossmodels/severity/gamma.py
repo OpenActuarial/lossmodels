@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import gamma
 
 from .base import SeverityModel
@@ -31,11 +32,11 @@ class Gamma(SeverityModel):
         self.alpha = alpha
         self.theta = theta
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return np.random.gamma(shape=self.alpha, scale=self.theta, size=size)
+        return resolve_rng(rng).gamma(shape=self.alpha, scale=self.theta, size=size)
 
     def mean(self) -> float:
         return self.alpha * self.theta

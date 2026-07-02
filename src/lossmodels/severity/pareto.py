@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import pareto
 
 from .base import SeverityModel
@@ -34,11 +35,11 @@ class Pareto(SeverityModel):
         self.alpha = alpha
         self.theta = theta
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return pareto.rvs(b=self.alpha, scale=self.theta, size=size)
+        return pareto.rvs(b=self.alpha, scale=self.theta, size=size, random_state=scipy_random_state(rng))
 
     def mean(self) -> float:
         if self.alpha <= 1:

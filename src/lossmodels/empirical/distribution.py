@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 
 from ..frequency.base import FrequencyModel
 from ..severity.base import SeverityModel
@@ -24,14 +25,14 @@ class EmpiricalSeverity(SeverityModel):
 
         self.data = data
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """
         Generate bootstrap samples from the empirical severity distribution.
         """
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return np.random.choice(self.data, size=size, replace=True)
+        return resolve_rng(rng).choice(self.data, size=size, replace=True)
 
     def mean(self) -> float:
         return float(np.mean(self.data))
@@ -56,8 +57,15 @@ class EmpiricalSeverity(SeverityModel):
         return float(np.mean(self.data <= x))
 
     def quantile(self, p):
-        """Empirical quantile (inverse CDF) from the observed data."""
-        q = np.quantile(self.data, p)
+        """Empirical quantile: the true inverse CDF ``inf{x : F(x) >= p}``.
+
+        Returns an observed data point (``np.quantile`` with
+        ``method="inverted_cdf"``), consistent with this class's own ``cdf``
+        and with the ecosystem VaR convention in
+        ``lossmodels.aggregate.risk_measures``, ``risksim``, and
+        ``extremeloss``.
+        """
+        q = np.quantile(self.data, p, method="inverted_cdf")
         return float(q) if np.ndim(p) == 0 else np.asarray(q, dtype=float)
 
     def excess_loss(self, d: float) -> float:
@@ -104,14 +112,14 @@ class EmpiricalFrequency(FrequencyModel):
 
         self.data = data.astype(int)
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """
         Generate bootstrap samples from the empirical frequency distribution.
         """
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return np.random.choice(self.data, size=size, replace=True)
+        return resolve_rng(rng).choice(self.data, size=size, replace=True)
 
     def mean(self) -> float:
         return float(np.mean(self.data))

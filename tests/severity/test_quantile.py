@@ -54,7 +54,20 @@ def test_pdf_cdf_array_vectorize(model):
 def test_empirical_quantile_matches_numpy():
     data = np.random.default_rng(0).lognormal(9, 1.0, 2000)
     es = EmpiricalSeverity(data)
-    assert es.quantile(0.5) == pytest.approx(float(np.quantile(data, 0.5)))
+    assert es.quantile(0.5) == pytest.approx(
+        float(np.quantile(data, 0.5, method="inverted_cdf"))
+    )
+
+
+def test_empirical_quantile_matches_ecosystem_var():
+    # EmpiricalSeverity.quantile and aggregate.risk_measures.var are two views
+    # of the same empirical inverse CDF; they must agree exactly.
+    from lossmodels.aggregate.risk_measures import var
+
+    data = np.random.default_rng(3).gamma(2.0, 3000.0, 500)
+    es = EmpiricalSeverity(data)
+    for q in (0.5, 0.9, 0.95, 0.99):
+        assert es.quantile(q) == pytest.approx(var(data, q))
 
 
 def test_base_numerical_quantile_fallback():

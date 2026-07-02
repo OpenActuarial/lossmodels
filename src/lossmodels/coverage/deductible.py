@@ -1,4 +1,7 @@
 import numpy as np
+from scipy.integrate import quad
+
+from ..utils.random import RNGLike, resolve_rng
 
 from ..severity.base import SeverityModel
 
@@ -24,11 +27,14 @@ class OrdinaryDeductible(SeverityModel):
         self.severity = severity
         self.d = d
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """Generate random samples of payment per loss after deductible."""
         if size <= 0:
             raise ValueError("size must be positive.")
-        ground_up = self.severity.sample(size=size)
+        if rng is None:
+            ground_up = self.severity.sample(size=size)
+        else:
+            ground_up = self.severity.sample(size=size, rng=resolve_rng(rng))
         return np.maximum(ground_up - self.d, 0.0)
 
     def mean(self) -> float:
@@ -41,12 +47,26 @@ class OrdinaryDeductible(SeverityModel):
 
     def variance(self, n_sim: int = 100_000) -> float:
         """
-        Variance of payment per loss after deductible.
+        Variance of payment per loss after deductible, computed deterministically.
 
-        Default implementation uses simulation.
+        For Y = (X - d)+, the second moment is
+
+            E[Y^2] = integral_0^inf 2 y S_X(d + y) dy
+
+        so the variance follows from E[Y^2] - E[Y]^2 without simulation.
+        The integral diverges when the underlying severity has no second
+        moment, matching the behavior of ``severity.variance()``.
+        The ``n_sim`` argument is retained for backward compatibility but is
+        no longer used.
         """
-        samples = self.sample(size=n_sim)
-        return float(np.var(samples, ddof=0))
+        second_moment = 2.0 * quad(
+            lambda y: y * (1.0 - float(self.severity.cdf(self.d + y))),
+            0.0,
+            np.inf,
+            limit=200,
+        )[0]
+        m1 = self.mean()
+        return float(second_moment - m1 * m1)
 
     def cdf(self, x: float) -> float:
         """

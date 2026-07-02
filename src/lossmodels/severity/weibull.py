@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.special import gamma as gamma_func
 from scipy.stats import weibull_min
 
@@ -32,11 +33,11 @@ class Weibull(SeverityModel):
         self.k = k
         self.lam = lam
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return self.lam * np.random.weibull(a=self.k, size=size)
+        return self.lam * resolve_rng(rng).weibull(a=self.k, size=size)
 
     def mean(self) -> float:
         return float(self.lam * gamma_func(1 + 1 / self.k))

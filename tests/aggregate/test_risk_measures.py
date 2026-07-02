@@ -32,15 +32,19 @@ def test_var_empty_losses():
 def test_tvar_basic():
     losses = np.array([0, 1, 2, 3, 4, 5], dtype=float)
     q = 0.5
-    expected = np.mean(np.array([2, 3, 4, 5], dtype=float))
+    # Average-quantile TVaR: n*q = 3 is an integer, so the estimate is the
+    # mean of the largest n*(1-q) = 3 observations.
+    expected = np.mean(np.array([3, 4, 5], dtype=float))
     assert np.isclose(tvar(losses, q), expected)
 
 
-def test_tvar_includes_var_observations():
+def test_tvar_weights_atom_at_var_correctly():
     losses = np.array([0, 1, 2, 2, 100], dtype=float)
     q = 0.6
-    expected = np.mean(np.array([2, 2, 100], dtype=float))
-    assert np.isclose(tvar(losses, q), expected)
+    # VaR = x_(3) = 2. The atom at 2 contributes only the probability mass
+    # lying above level q: TVaR = (2 + 100) / (5 * 0.4) = 51 -- not the
+    # conditional mean of {2, 2, 100}, which double-counts the atom.
+    assert np.isclose(tvar(losses, q), 51.0)
 
 
 def test_tvar_invalid_q():

@@ -10,63 +10,97 @@ def _validate_losses(losses: np.ndarray) -> np.ndarray:
     return losses
 
 
-def _empirical_var(losses: np.ndarray, q: float) -> float:
-    """
-    Empirical VaR defined as the smallest observed loss whose empirical CDF
-    is at least q.
-    """
-    sorted_losses = np.sort(losses)
-    ecdf = np.arange(1, len(sorted_losses) + 1) / len(sorted_losses)
-    idx = np.searchsorted(ecdf, q, side="left")
-    return float(sorted_losses[idx])
+def _validate_q(q) -> np.ndarray:
+    q_arr = np.asarray(q, dtype=float)
+    if q_arr.size == 0 or not np.all((q_arr > 0) & (q_arr < 1)):
+        raise ValueError("q must be between 0 and 1.")
+    return q_arr
 
 
-def var(losses: np.ndarray, q: float) -> float:
+def _var_rank(n: int, q: np.ndarray) -> np.ndarray:
+    """Rank k of the VaR order statistic: k = ceil(n*q), guarded against
+    floating-point error when n*q is an exact integer."""
+    nq = n * q
+    k = np.where(np.abs(nq - np.round(nq)) < 1e-8, np.round(nq), np.ceil(nq))
+    return np.clip(k.astype(np.intp), 1, n)
+
+
+def var(losses: np.ndarray, q):
     """
     Value-at-Risk at level q.
 
+    Implements the lower empirical quantile
+
+        VaR_q = inf{x : F(x) >= q},
+
+    i.e. the order statistic ``x_(ceil(n*q))`` (equal to
+    ``np.quantile(losses, q, method="inverted_cdf")``). Ecosystem-standard
+    estimator shared with ``risksim`` and ``extremeloss``.
+
     Parameters
     ----------
-    losses : np.ndarray
-        Array of loss samples.
-    q : float
-        Quantile level, with 0 < q < 1.
+    losses : array-like
+        Loss samples.
+    q : float or array-like
+        Quantile level(s), with 0 < q < 1.
 
     Returns
     -------
-    float
-        Empirical VaR at level q, defined as the smallest observed loss
-        whose empirical CDF reaches q.
+    float or np.ndarray
+        Scalar for scalar ``q``; array of the same length for array ``q``.
     """
-    if not (0 < q < 1):
-        raise ValueError("q must be between 0 and 1.")
-    losses = _validate_losses(losses)
-    return _empirical_var(losses, q)
+    q_arr = _validate_q(q)
+    losses = np.sort(_validate_losses(losses))
+    k = _var_rank(losses.size, q_arr)
+    out = losses[k - 1]
+    return float(out) if q_arr.ndim == 0 else np.asarray(out, dtype=float)
 
 
-def tvar(losses: np.ndarray, q: float) -> float:
+def tvar(losses: np.ndarray, q):
     """
     Tail Value-at-Risk at level q.
 
+    Implements the average-quantile (coherent) definition
+
+        TVaR_q = (1 / (1 - q)) * integral_q^1 VaR_u du,
+
+    via the Acerbi-Tasche empirical plug-in: with sorted losses
+    ``x_(1) <= ... <= x_(n)`` and ``k = ceil(n*q)``,
+
+        TVaR_q = [ sum_{i>k} x_(i) + x_(k) * (k - n*q) ] / (n * (1 - q)).
+
+    Exact for the empirical distribution (handles ties/atoms correctly),
+    always ``>= var(losses, q)``, and equal to the mean of the largest
+    ``n*(1-q)`` observations when ``n*q`` is an integer. Ecosystem-standard
+    estimator shared with ``risksim`` and ``extremeloss``.
+
     Parameters
     ----------
-    losses : np.ndarray
-        Array of loss samples.
-    q : float
-        Quantile level, with 0 < q < 1.
+    losses : array-like
+        Loss samples.
+    q : float or array-like
+        Quantile level(s), with 0 < q < 1.
 
     Returns
     -------
-    float
-        Empirical TVaR at level q, computed as the mean of losses
-        greater than or equal to VaR(q).
+    float or np.ndarray
+        Scalar for scalar ``q``; array of the same length for array ``q``.
     """
-    if not (0 < q < 1):
-        raise ValueError("q must be between 0 and 1.")
-    losses = _validate_losses(losses)
-    var_q = _empirical_var(losses, q)
-    tail = losses[losses >= var_q]
-    return float(np.mean(tail))
+    q_arr = _validate_q(q)
+    losses = np.sort(_validate_losses(losses))
+    n = losses.size
+    k = _var_rank(n, q_arr)
+    csum = np.concatenate(([0.0], np.cumsum(losses)))
+    tail_sum = csum[n] - csum[k]
+    var_vals = losses[k - 1]
+    nq = n * q_arr
+    weight = np.where(np.abs(nq - np.round(nq)) < 1e-8, 0.0, k - nq)
+    out = (tail_sum + var_vals * weight) / (n * (1.0 - q_arr))
+    # TVaR >= VaR holds as a theorem in exact arithmetic; enforce it so
+    # floating-point noise (e.g. a constant tail at a layer limit) can never
+    # produce tvar infinitesimally below var.
+    out = np.maximum(out, var_vals)
+    return float(out) if q_arr.ndim == 0 else np.asarray(out, dtype=float)
 
 
 def stop_loss(losses: np.ndarray, d: float) -> float:

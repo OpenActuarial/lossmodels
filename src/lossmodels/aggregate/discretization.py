@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def discretize_severity(severity, h: float, max_loss: float, method: str = "upper"):
+def discretize_severity(severity, h: float, max_loss: float, method: str = "midpoint"):
     """
     Discretize a severity model onto a lattice with spacing h.
 
@@ -15,7 +15,17 @@ def discretize_severity(severity, h: float, max_loss: float, method: str = "uppe
         Maximum loss level for discretization.
         The final bucket absorbs all remaining tail probability.
     method : {"upper", "lower", "midpoint"}
-        Discretization scheme.
+        Discretization scheme. Defaults to ``"midpoint"`` (changed from
+        ``"upper"`` in 0.6.0, since midpoint is the standard, nearly unbiased
+        choice for Panjer/FFT input; the bound methods systematically shift
+        the mean by about h/2). ``"upper"`` places the mass of ``[jh, (j+1)h)``
+        at ``jh`` (losses rounded *down*; the discretized cdf is an upper bound
+        on the true cdf, so the discretized mean is biased low). ``"lower"``
+        places the mass of ``((j-1)h, jh]`` at ``jh`` (losses rounded *up*; cdf
+        lower bound, mean biased high) -- together the two bracket the true
+        distribution. ``"midpoint"`` is the rounding / mass-dispersal method
+        (mass of ``(jh - h/2, jh + h/2]`` at ``jh``), the usual choice for
+        Panjer/FFT input.
 
     Returns
     -------
@@ -47,7 +57,12 @@ def discretize_severity(severity, h: float, max_loss: float, method: str = "uppe
         probs[m] = float(1.0 - severity.cdf(m * h))
 
     elif method == "lower":
-        probs[0] = float(severity.cdf(h))
+        # Backward difference: bucket j carries the mass of ((j-1)h, jh], so
+        # bucket 0 carries only the atom at zero (F(0), typically 0 for a
+        # continuous severity). Using cdf(h) here would double-count [0, h]
+        # against bucket 1 and, after normalization, bias the whole pmf low --
+        # the rounded-up scheme must bound the true mean from above.
+        probs[0] = float(severity.cdf(0.0))
         for j in range(1, m):
             left = (j - 1) * h
             right = j * h

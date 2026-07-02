@@ -21,6 +21,7 @@ Parameter -> SciPy mapping (verified against the table E[X^k] formulas):
 from math import gamma as _G
 
 import numpy as np
+from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import betaprime, burr, burr12, fisk, lomax
 
 from .base import SeverityModel
@@ -30,7 +31,8 @@ from ..utils.numeric import eval_dist
 class Burr(SeverityModel):
     """Burr (Type XII, Singh-Maddala) severity.
 
-    X ~ Burr(alpha, theta, gamma), support x > 0.
+    X ~ Burr(alpha, theta, gamma), support x > 0::
+
         F(x) = 1 - [1 / (1 + (x/theta)^gamma)]^alpha
         E[X^k] = theta^k Gamma(1 + k/gamma) Gamma(alpha - k/gamma) / Gamma(alpha),
                  for -gamma < k < alpha * gamma.
@@ -66,10 +68,10 @@ class Burr(SeverityModel):
             raise ValueError("Variance does not exist for alpha*gamma <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -87,7 +89,8 @@ class Burr(SeverityModel):
 class InverseBurr(SeverityModel):
     """Inverse Burr (Dagum) severity.
 
-    X ~ InverseBurr(tau, theta, gamma), support x > 0.
+    X ~ InverseBurr(tau, theta, gamma), support x > 0::
+
         F(x) = [ (x/theta)^gamma / (1 + (x/theta)^gamma) ]^tau
         E[X^k] = theta^k Gamma(tau + k/gamma) Gamma(1 - k/gamma) / Gamma(tau),
                  for -tau*gamma < k < gamma.
@@ -123,10 +126,10 @@ class InverseBurr(SeverityModel):
             raise ValueError("Variance does not exist for gamma <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -144,7 +147,8 @@ class InverseBurr(SeverityModel):
 class GeneralizedPareto(SeverityModel):
     """Generalized Pareto severity (Klugman transformed-beta form; NOT the EVT GPD).
 
-    X ~ GeneralizedPareto(alpha, theta, tau), support x > 0.
+    X ~ GeneralizedPareto(alpha, theta, tau), support x > 0::
+
         F(x) = Beta(tau, alpha; x/(x+theta))   (regularized incomplete beta)
         E[X^k] = theta^k Gamma(tau + k) Gamma(alpha - k) / (Gamma(alpha) Gamma(tau)),
                  for -tau < k < alpha.
@@ -181,10 +185,10 @@ class GeneralizedPareto(SeverityModel):
             raise ValueError("Variance does not exist for alpha <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -239,10 +243,10 @@ class ParetoII(SeverityModel):
             raise ValueError("Variance does not exist for alpha <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -289,10 +293,10 @@ class InversePareto(SeverityModel):
             "Variance does not exist for the inverse Pareto distribution."
         )
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -337,10 +341,10 @@ class Loglogistic(SeverityModel):
             raise ValueError("Variance does not exist for gamma <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -392,10 +396,10 @@ class Paralogistic(SeverityModel):
             raise ValueError("Variance does not exist for alpha^2 <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)
@@ -445,10 +449,10 @@ class InverseParalogistic(SeverityModel):
             raise ValueError("Variance does not exist for tau <= 2.")
         return self._moment(2) - self._moment(1) ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return self._d.rvs(size=size)
+        return self._d.rvs(size=size, random_state=scipy_random_state(rng))
 
     def pdf(self, x):
         return eval_dist(lambda v: self._d.pdf(v), x)

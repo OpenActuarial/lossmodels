@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import poisson
 
 from .base import FrequencyModel
@@ -26,11 +27,11 @@ class Poisson(FrequencyModel):
             raise ValueError("lam must be nonnegative.")
         self.lam = lam
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """Generate random samples of claim counts."""
         if size <= 0:
             raise ValueError("size must be positive.")
-        return np.random.poisson(self.lam, size=size)
+        return resolve_rng(rng).poisson(self.lam, size=size)
 
     def mean(self) -> float:
         """E[N] = lam."""

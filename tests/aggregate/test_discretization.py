@@ -103,3 +103,28 @@ def test_mean_from_discretized_pmf_invalid():
         mean_from_discretized_pmf([0.5, 0.5], h=0.0)
     with pytest.raises(ValueError):
         mean_from_discretized_pmf([-0.1, 1.1], h=1.0)
+
+def test_default_method_is_midpoint():
+    from lossmodels.severity import Exponential
+
+    model = Exponential(rate=1.0)
+    default = discretize_severity(model, h=0.05, max_loss=40.0)
+    midpoint = discretize_severity(model, h=0.05, max_loss=40.0, method="midpoint")
+    np.testing.assert_allclose(default, midpoint)
+    # midpoint mean is nearly unbiased
+    assert abs(mean_from_discretized_pmf(default, 0.05) - 1.0) < 5e-4
+
+
+def test_method_means_bracket_true_mean():
+    from lossmodels.severity import Exponential
+
+    model = Exponential(rate=1.0)
+    h, m = 0.05, 40.0
+    mu = {
+        meth: mean_from_discretized_pmf(
+            discretize_severity(model, h=h, max_loss=m, method=meth), h
+        )
+        for meth in ("upper", "midpoint", "lower")
+    }
+    assert mu["upper"] <= mu["midpoint"] <= mu["lower"]
+    assert mu["upper"] <= 1.0 <= mu["lower"]

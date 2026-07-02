@@ -13,6 +13,7 @@ the mass at zero and renormalizes, exactly as in Loss Models Appendix B.3.1:
 from math import log
 
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 
 from .base import FrequencyModel
 from ..utils.numeric import eval_dist
@@ -62,13 +63,16 @@ class ZeroTruncated(FrequencyModel):
         e2 = (self.base.variance() + self.base.mean() ** 2) / (1.0 - self._p0)
         return e2 - m ** 2
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
+        rng = None if rng is None else resolve_rng(rng)
         pieces = []
         n = 0
         while n < size:
-            draw = np.asarray(self.base.sample(max(2 * (size - n), 16)))
+            n_draw = max(2 * (size - n), 16)
+            raw = self.base.sample(n_draw) if rng is None else self.base.sample(n_draw, rng=rng)
+            draw = np.asarray(raw)
             nz = draw[draw > 0].astype(int)
             pieces.append(nz)
             n += nz.size
@@ -127,10 +131,10 @@ class Logarithmic(FrequencyModel):
     def variance(self) -> float:
         return self.beta * (1.0 + self.beta - self.beta / self._c) / self._c
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         if size <= 0:
             raise ValueError("size must be positive.")
-        return np.random.logseries(self._r, size=size)
+        return resolve_rng(rng).logseries(self._r, size=size)
 
     def __repr__(self) -> str:
         return f"Logarithmic(beta={self.beta})"

@@ -1,4 +1,7 @@
 import numpy as np
+from scipy.integrate import quad
+
+from ..utils.random import RNGLike, resolve_rng
 
 from ..severity.base import SeverityModel
 
@@ -24,11 +27,14 @@ class PolicyLimit(SeverityModel):
         self.severity = severity
         self.u = u
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """Generate random samples of payment per loss after policy limit."""
         if size <= 0:
             raise ValueError("size must be positive.")
-        ground_up = self.severity.sample(size=size)
+        if rng is None:
+            ground_up = self.severity.sample(size=size)
+        else:
+            ground_up = self.severity.sample(size=size, rng=resolve_rng(rng))
         return np.minimum(ground_up, self.u)
 
     def mean(self) -> float:
@@ -41,12 +47,26 @@ class PolicyLimit(SeverityModel):
 
     def variance(self, n_sim: int = 100_000) -> float:
         """
-        Variance of payment per loss after policy limit.
+        Variance of payment per loss after policy limit, computed deterministically.
 
-        Default implementation uses simulation.
+        For Y = min(X, u), the second moment is
+
+            E[Y^2] = integral_0^u 2 y S_X(y) dy
+
+        so the variance follows from E[Y^2] - E[Y]^2 without simulation.
+        The ``n_sim`` argument is retained for backward compatibility but is
+        no longer used.
         """
-        samples = self.sample(size=n_sim)
-        return float(np.var(samples, ddof=0))
+        if self.u == 0.0:
+            return 0.0
+        second_moment = 2.0 * quad(
+            lambda y: y * (1.0 - float(self.severity.cdf(y))),
+            0.0,
+            self.u,
+            limit=200,
+        )[0]
+        m1 = self.mean()
+        return float(second_moment - m1 * m1)
 
     def cdf(self, x: float) -> float:
         """

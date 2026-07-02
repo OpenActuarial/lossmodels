@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import expon
 
 from .base import SeverityModel
@@ -31,14 +32,14 @@ class Exponential(SeverityModel):
         self.rate = rate
         self.scale = 1.0 / rate  # SciPy uses scale = 1 / rate
 
-    def sample(self, size: int = 1) -> np.ndarray:
+    def sample(self, size: int = 1, rng: RNGLike = None) -> np.ndarray:
         """
         Generate random samples.
         """
         if size <= 0:
             raise ValueError("size must be positive.")
 
-        return np.random.exponential(scale=self.scale, size=size)
+        return resolve_rng(rng).exponential(scale=self.scale, size=size)
 
     def mean(self) -> float:
         return 1.0 / self.rate
