@@ -125,8 +125,8 @@ class SingleParameterPareto(SeverityModel):
         E[X^k] = alpha theta^k / (alpha - k),  k < alpha.
 
     This is the same distribution as :class:`lossmodels.Pareto`; it is provided
-    under the FAM/ASTAM name. Per Loss Models, only ``alpha`` is a true parameter
-    -- ``theta`` is the known lower truncation point set in advance.
+    under its *Loss Models* Appendix A name, where only ``alpha`` is a true
+    parameter -- ``theta`` is the known lower truncation point set in advance.
     """
 
     def __init__(self, alpha: float, theta: float):

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.1
+
+### Changed
+
+- Documentation only: exam-track references (FAM/ASTAM, SOA tables) are
+  replaced with the stable citation -- *Loss Models: From Data to Decisions*
+  (Klugman, Panjer & Willmot), Appendix A. No behavior changes.
+
+- More descriptive package `description` metadata.
+
+### Added
+
+- Conformance, identity, and integration test suites (scipy/closed-form
+  conformance, mathematical identities, cross-package seams). Example
+  scripts are now executed by the test suite.
+
 ## 0.6.0
 
 ### Added

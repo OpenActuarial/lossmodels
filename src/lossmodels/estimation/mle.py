@@ -359,7 +359,7 @@ def _uncensored_moments(values, censored):
 
 
 def fit_paretoII(data, truncation=None, censored=None) -> ParetoII:
-    """Fit a Pareto Type II (Lomax) severity -- the FAM/ASTAM "Pareto" --
+    """Fit a Pareto Type II (Lomax) severity -- the *Loss Models* "Pareto" --
     by numerical maximum likelihood, with optional left truncation and right
     censoring (deductibles and limits).
 

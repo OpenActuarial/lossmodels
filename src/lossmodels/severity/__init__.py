@@ -6,7 +6,7 @@ from .pareto import Pareto
 from .spliced import SplicedSeverity
 from .weibull import Weibull
 
-# FAM / ASTAM inventory (Loss Models Appendix A), added in 0.5.0
+# Loss Models Appendix A inventory, added in 0.5.0
 from .transformed_beta import (
     Burr,
     InverseBurr,

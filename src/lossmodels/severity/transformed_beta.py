@@ -1,12 +1,12 @@
 """Transformed Beta family of continuous severities.
 
-Klugman (Loss Models, Appendix A.2) parameterizations, as used on the SOA FAM /
-ASTAM tables. Every distribution carries a scale parameter ``theta`` and is backed
-by an exactly-equivalent SciPy distribution; the moment formulas below are the
-Klugman closed forms (so ``mean``/``variance`` match the exam tables exactly and
-raise when the moment does not exist).
+Parameterizations follow Appendix A.2 of *Loss Models: From Data to Decisions*
+(Klugman, Panjer & Willmot). Every distribution carries a scale parameter
+``theta`` and is backed by an exactly-equivalent SciPy distribution; the moment
+formulas below are the Appendix A closed forms (so ``mean``/``variance`` match
+the book exactly and raise when the moment does not exist).
 
-Parameter -> SciPy mapping (verified against the table E[X^k] formulas):
+Parameter -> SciPy mapping (verified against the Appendix A E[X^k] formulas):
 
     Burr(alpha, theta, gamma)            burr12(c=gamma, d=alpha, scale=theta)
     InverseBurr(tau, theta, gamma)       burr(c=gamma, d=tau, scale=theta)
@@ -207,7 +207,7 @@ class GeneralizedPareto(SeverityModel):
 
 
 class ParetoII(SeverityModel):
-    """Pareto (Type II, Lomax) severity -- the FAM/ASTAM two-parameter "Pareto".
+    """Pareto (Type II, Lomax) severity -- the *Loss Models* two-parameter "Pareto".
 
     X ~ Pareto(alpha, theta), support x > 0.
         f(x) = alpha theta^alpha / (x + theta)^(alpha+1)
@@ -216,7 +216,7 @@ class ParetoII(SeverityModel):
         E[X] = theta / (alpha - 1),  alpha > 1.
 
     Note: this is distinct from :class:`lossmodels.Pareto`, which is the Pareto
-    Type I (single-parameter) distribution with support x >= theta. The FAM table
+    Type I (single-parameter) distribution with support x >= theta. Appendix A
     lists this Type II / Lomax form under the name "Pareto"; the Type I appears
     under "Single-Parameter Pareto".
     """

@@ -23,7 +23,7 @@ from .severity import (
     Pareto,
     SplicedSeverity,
     Weibull,
-    # FAM / ASTAM continuous inventory (0.5.0)
+    # Loss Models continuous inventory (0.5.0)
     Burr,
     InverseBurr,
     GeneralizedPareto,

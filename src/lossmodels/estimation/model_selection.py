@@ -27,7 +27,7 @@ SEVERITY_MLE_FITTERS = {
     "lognormal": (fit_lognormal, 2),
     "pareto": (fit_pareto, 2),
     "weibull": (fit_weibull, 2),
-    # FAM / ASTAM families (0.6.0); all support truncation/censoring
+    # Loss Models families (0.6.0); all support truncation/censoring
     "paretoII": (fit_paretoII, 2),
     "loglogistic": (fit_loglogistic, 2),
     "inverse_gamma": (fit_inverse_gamma, 2),
