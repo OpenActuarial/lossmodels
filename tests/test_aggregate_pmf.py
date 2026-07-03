@@ -56,3 +56,9 @@ def test_panjer_matches_collective_monte_carlo():
     agg = panjer_recursion(freq, SEV_PMF, n_steps=8192)
     crm = lm.CollectiveRiskModel(freq, SEV)
     assert crm.var(q, n_sim=200_000, rng=1) == pytest.approx(var_from_pmf(agg, H, q), rel=0.02)
+
+
+def test_panjer_underflow_raises_with_guidance():
+    sev_pmf = discretize_severity(lm.Lognormal(7.37, 1.11), H, max_loss=25_000.0)
+    with pytest.raises(ValueError, match="fft_aggregate_poisson"):
+        panjer_recursion(lm.Poisson(3000.0), sev_pmf, n_steps=1000)

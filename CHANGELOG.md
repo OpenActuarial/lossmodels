@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.1
+## 0.6.2
 
 ### Changed
 
@@ -15,6 +15,13 @@
 - Conformance, identity, and integration test suites (scipy/closed-form
   conformance, mathematical identities, cross-package seams). Example
   scripts are now executed by the test suite.
+- Worked-example regression test for the censored-payments coverage page.
+
+### Fixed
+
+- `panjer_recursion` raises with guidance when the aggregate mass at zero
+  underflows (large expected claim counts) instead of silently returning
+  zeros; `fft_aggregate_poisson` is the right tool there.
 
 ## 0.6.0
 

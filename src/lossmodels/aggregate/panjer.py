@@ -119,6 +119,12 @@ def panjer_recursion(frequency, severity_pmf: np.ndarray, n_steps: int) -> np.nd
 
     g = np.zeros(n_steps + 1, dtype=float)
     g[0] = float(p0_func(f0))
+    if float(g[0]) == 0.0:
+        raise ValueError(
+            "Panjer recursion underflowed: the aggregate mass at zero is below "
+            "float precision (large expected claim count). Use "
+            "fft_aggregate_poisson for high-frequency aggregates."
+        )
 
     max_j = len(f) - 1
 
