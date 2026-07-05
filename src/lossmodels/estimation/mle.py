@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import gamma as gamma_dist
+from scipy.stats import nbinom
 from scipy.stats import weibull_min
 
 from ..frequency import NegativeBinomial, Poisson
@@ -134,23 +135,34 @@ def fit_negbinomial(data) -> NegativeBinomial:
         (1e-8, 1.0 - 1e-8),     # 0 < p < 1
     ]
 
+    # Aggregate to distinct counts so the likelihood evaluates the PMF once per
+    # unique value rather than once per observation, and score with
+    # nbinom.logpmf -- the same (r, p) parameterization NegativeBinomial wraps --
+    # instead of log(pmf(...)), which underflows to -inf in the tails. Each
+    # optimizer step thus becomes a single vectorized call over the (typically
+    # small) set of unique counts instead of an O(n) Python loop of scalar
+    # PMF evaluations.
+    values, counts = np.unique(data, return_counts=True)
+
     def neg_log_likelihood(params):
         r, p = params
-        try:
-            model = NegativeBinomial(r=r, p=p)
-            pmf_vals = np.array([model.pmf(int(x)) for x in data], dtype=float)
-            if np.any(~np.isfinite(pmf_vals)) or np.any(pmf_vals <= 0):
-                return np.inf
-            return float(-np.sum(np.log(pmf_vals)))
-        except Exception:
+        log_pmf = nbinom.logpmf(values, r, p)
+        if np.any(~np.isfinite(log_pmf)):
             return np.inf
+        return float(-np.dot(counts, log_pmf))
 
-    result = minimize(
-        neg_log_likelihood,
-        x0=initial,
-        bounds=bounds,
-        method="L-BFGS-B",
-    )
+    # L-BFGS-B builds its gradient by finite differences that probe points on
+    # the edge of the feasible box, where the negative log-likelihood is +inf.
+    # The inf - inf this produces inside SciPy's numerical-derivative step
+    # raises a benign "invalid value encountered" warning without affecting the
+    # optimum, so silence that specific floating-point warning during the fit.
+    with np.errstate(invalid="ignore"):
+        result = minimize(
+            neg_log_likelihood,
+            x0=initial,
+            bounds=bounds,
+            method="L-BFGS-B",
+        )
 
     if not result.success:
         raise RuntimeError(

@@ -6,5 +6,4 @@ __pycache__/
 .venv
 build/
 dist/
-*.egg-info/.ruff_cache/
-.pytest_cache/
+*.egg-info/

@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.7.1
+
+### Changed
+- **`fit_negbinomial` performance.** The Negative Binomial MLE now aggregates
+  the data to distinct counts and scores each optimizer step with a single
+  vectorized `scipy.stats.nbinom.logpmf` call weighted by the count
+  multiplicities, instead of evaluating a scalar PMF once per observation per
+  iteration. Fitted results are unchanged (the likelihood is identical up to
+  floating point); only the runtime differs -- the two official
+  `fit_best_frequency` model-selection tests drop from ~23.5s each to well
+  under a second. Scoring in log space via `logpmf` also avoids the tail
+  underflow of the previous `log(pmf(...))`.
+- **`fit_negbinomial` warning hygiene.** The L-BFGS-B finite-difference
+  gradient probes the edge of the feasible `(r, p)` box, where the negative
+  log-likelihood is `+inf`; the resulting `inf - inf` inside SciPy's numerical
+  derivative raised a benign numpy "invalid value encountered" `RuntimeWarning`
+  during otherwise-successful fits. That specific floating-point warning is now
+  suppressed for the duration of the optimization only.
+
+### Fixed
+- **`examples/panjer_vs_simulation.py` aggregate grid.** The Panjer recursion
+  step count is now sized to the discretized severity support
+  (`int(round(max_loss / h))`) rather than a fixed 50,000. The old value
+  computed the aggregate PMF out to ~250 aggregate means at large cost with no
+  effect on the reported mean; the example now runs an order of magnitude
+  faster while reproducing the same result.
+
+### Tests
+- Added `tests/estimation/test_negbinomial_parameterization.py`, pinning that
+  `NegativeBinomial(r, p).pmf` matches `scipy.stats.nbinom(r, p)` (and not the
+  flipped `(r, 1 - p)` convention), that the fit's `logpmf` likelihood agrees
+  with the model's own PMF, and that the fit stays frequency-aggregated,
+  fast, and free of the finite-difference warning.
+
 ## 0.7.0
 
 ### Added

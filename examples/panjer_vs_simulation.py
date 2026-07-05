@@ -46,7 +46,13 @@ print()
 # -------------------------------------------------
 h = 0.01
 max_loss = 20.0
-n_steps = 50_000
+# The aggregate lives on the same lattice as the discretized severity. Here
+# max_loss (20) is already ~10 aggregate means out (E[S] = 2), so spanning
+# [0, max_loss] captures essentially all of the aggregate probability and the
+# recursion needs no further steps. Sizing n_steps to the severity support
+# keeps this exact -- the previous value of 50_000 pushed the grid out to
+# S = 500 (~250 aggregate means) at a large and pointless cost.
+n_steps = int(round(max_loss / h))
 
 severity_pmf = discretize_severity(sev, h=h, max_loss=max_loss)
 aggregate_pmf = panjer_recursion(freq, severity_pmf, n_steps=n_steps)
