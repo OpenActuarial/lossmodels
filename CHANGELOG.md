@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.7.2
+
+### Changed
+- **`fit_negbinomial` now refuses non-overdispersed data.** The negative
+  binomial always satisfies variance/mean = 1/p > 1, so when the sample
+  variance is not greater than the mean no finite `(r, p)` maximizes the
+  likelihood -- the supremum is the Poisson limit (`r -> inf`, `p -> 1`). The
+  fitter previously ran the optimizer anyway and returned an arbitrary,
+  non-optimal finite result (with `success=True`) whose value was unstable
+  across versions and platforms. It now raises `ValueError` pointing to
+  `fit_poisson`, matching the long-standing contract of
+  `fit_negbinomial_moments`. Because `fit_best_frequency` already drops
+  candidates that fail to fit, model selection on underdispersed data now
+  cleanly falls back to Poisson.
+
+### Removed
+- **Obsolete negbinomial fit warning suppression.** The `np.errstate` guard
+  added in 0.7.1 silenced a SciPy finite-difference `RuntimeWarning` that only
+  arose when the optimizer chased the `p -> 1` boundary on near-Poisson data.
+  With such data now rejected up front, the optimizer only runs on
+  well-conditioned interior problems and the warning no longer occurs, so the
+  suppression has been removed rather than carried forward -- the guard is the
+  root-cause fix.
+
+### Tests
+- Extended `tests/estimation/test_negbinomial_parameterization.py` to pin the
+  new refusal (underdispersed, equidispersed, and degenerate inputs raise),
+  confirm overdispersed fits are warning-free without suppression, and verify
+  `fit_best_frequency` falls back to Poisson on underdispersed data.
+
 ## 0.7.1
 
 ### Changed

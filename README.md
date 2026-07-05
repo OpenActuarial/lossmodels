@@ -1,7 +1,5 @@
 # lossmodels
 
-[![CI](https://github.com/OpenActuarial/lossmodels/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenActuarial/lossmodels/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/lossmodels)](https://pypi.org/project/lossmodels/)
-
 A Python library for actuarial loss modeling using frequency–severity methods.
 
 ---

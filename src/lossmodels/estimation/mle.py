@@ -117,18 +117,38 @@ def fit_negbinomial(data) -> NegativeBinomial:
     Support: {0, 1, 2, ...}
     Mean = r(1-p)/p
     Variance = r(1-p)/p^2
+
+    Requires overdispersed data. The negative binomial always satisfies
+    variance/mean = 1/p > 1, so for equi- or under-dispersed data (sample
+    variance <= mean) no finite (r, p) maximizes the likelihood -- the
+    supremum is the Poisson limit (r -> inf, p -> 1). This mirrors the
+    contract of :func:`fit_negbinomial_moments`.
+
+    Raises
+    ------
+    ValueError
+        If the sample variance is not greater than the mean, in which case the
+        negative binomial MLE does not exist. Fit a Poisson model with
+        :func:`fit_poisson` instead, or use a model that admits underdispersion.
     """
     data = _validate_count_data(data)
 
     mean_x = float(np.mean(data))
     var_x = float(np.var(data, ddof=0))
 
-    if var_x > mean_x and mean_x > 0:
-        p0 = mean_x / var_x
-        r0 = mean_x**2 / (var_x - mean_x)
-        initial = np.array([r0, p0], dtype=float)
-    else:
-        initial = np.array([1.0, 0.5], dtype=float)
+    if not (mean_x > 0 and var_x > mean_x):
+        raise ValueError(
+            "Negative Binomial maximum likelihood requires overdispersed data "
+            f"(variance > mean); got mean {mean_x:.6g}, variance {var_x:.6g}. "
+            "As the variance approaches the mean the likelihood supremum is the "
+            "Poisson limit (r -> inf, p -> 1) and no finite (r, p) maximizes it; "
+            "fit a Poisson model with fit_poisson instead."
+        )
+
+    # Method-of-moments starting point (well defined now that variance > mean).
+    p0 = mean_x / var_x
+    r0 = mean_x**2 / (var_x - mean_x)
+    initial = np.array([r0, p0], dtype=float)
 
     bounds = [
         (1e-8, None),           # r > 0
@@ -151,18 +171,12 @@ def fit_negbinomial(data) -> NegativeBinomial:
             return np.inf
         return float(-np.dot(counts, log_pmf))
 
-    # L-BFGS-B builds its gradient by finite differences that probe points on
-    # the edge of the feasible box, where the negative log-likelihood is +inf.
-    # The inf - inf this produces inside SciPy's numerical-derivative step
-    # raises a benign "invalid value encountered" warning without affecting the
-    # optimum, so silence that specific floating-point warning during the fit.
-    with np.errstate(invalid="ignore"):
-        result = minimize(
-            neg_log_likelihood,
-            x0=initial,
-            bounds=bounds,
-            method="L-BFGS-B",
-        )
+    result = minimize(
+        neg_log_likelihood,
+        x0=initial,
+        bounds=bounds,
+        method="L-BFGS-B",
+    )
 
     if not result.success:
         raise RuntimeError(
