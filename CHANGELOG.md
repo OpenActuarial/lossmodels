@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.7.0
+
+### Added
+- **Parameter uncertainty.** `fit_uncertainty(model, data, truncation=,
+  censored=)` evaluates the numerical Hessian of the log-likelihood at the
+  fitted parameters and returns the observed-information covariance --
+  generically, for any distribution whose `__init__` parameters are stored
+  as same-named attributes (all in-package models qualify). The
+  `FitUncertainty` result exposes `se`, `covariance`, and a `summary()`
+  table with Wald confidence intervals. Truncation and censoring flow
+  through `log_likelihood`, so the uncertainty matches the fit actually
+  performed; a non-negative-definite Hessian raises rather than returning
+  a covariance that means nothing.
+- **`compare_fits`.** The companion to `fit_best_severity`: every candidate
+  scored on every criterion (`loglik`, `aic`, `bic`, `ks`, `ad`, `cvm`) in
+  one DataFrame, so the trade-offs are visible -- a model can win AIC while
+  losing the tail.
+- **Tail protocol.** `SeverityModel.sf(x)` and
+  `SeverityModel.mean_excess(d)` (via the limited-expected-value identity
+  `E[(X-d)+] = E[X] - E[min(X,d)]`, so heavy tails need no integration to
+  infinity; infinite-mean models return `inf`; closed-form override point
+  for subclasses) on every distribution and on
+  `Layer`/`PolicyLimit` by inheritance. This is the small cross-package
+  protocol that `ratingmodels.pooling_charge_from_severity` consumes --
+  any object with these two methods qualifies, no package dependency
+  required.
+- **ILF and loss-elimination tables.** `increased_limits_table` and
+  `loss_elimination_table` tabulate ratios of limited expected values from
+  any fitted severity -- and, given the model's `FitUncertainty`, carry
+  the fit covariance through the delta method to `se`/`ci` columns on the
+  factor itself. The base-limit row has `se = 0` exactly (the ratio's
+  gradient vanishes there); an infinite-mean severity refuses to produce
+  elimination ratios rather than tabulating ratios of infinity.
+- `pandas` is now a dependency (tabular outputs).
+
 ## 0.6.2
 
 ### Changed

@@ -33,6 +33,8 @@ from .finite_support import (
 )
 
 __all__ = [
+    "increased_limits_table",
+    "loss_elimination_table",
     "SeverityModel",
     "Exponential",
     "Gamma",
@@ -61,3 +63,4 @@ __all__ = [
     "Beta",
     "GeneralizedBeta",
 ]
+from .tables import increased_limits_table, loss_elimination_table

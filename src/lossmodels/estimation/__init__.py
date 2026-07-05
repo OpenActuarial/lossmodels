@@ -27,7 +27,9 @@ from .moments import (
     fit_weibull_moments,
     fit_negbinomial_moments,
 )
+from .uncertainty import FitUncertainty, fit_uncertainty, model_parameters
 from .diagnostics import (
+    compare_fits,
     log_likelihood,
     pit_values,
     aic,
@@ -42,6 +44,10 @@ from .model_selection import fit_best_severity
 from .frequency_selection import fit_best_frequency
 
 __all__ = [
+    "compare_fits",
+    "model_parameters",
+    "fit_uncertainty",
+    "FitUncertainty",
     "censored_log_likelihood",
     "kaplan_meier",
     "fit_mle_censored",

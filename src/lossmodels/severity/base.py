@@ -35,6 +35,44 @@ class SeverityModel(ABC):
     def std(self) -> float:
         return np.sqrt(self.variance())
 
+    # --- Tail interface (the cross-package severity protocol) ---
+    def sf(self, x):
+        """Survival function ``P(X > x)``; the complement of :meth:`cdf`.
+
+        Together with :meth:`mean_excess` this is the small protocol that
+        downstream consumers (e.g. ``ratingmodels`` pooling charges) rely
+        on -- any object with these two methods qualifies.
+        """
+        return 1.0 - self.cdf(x)
+
+    def mean_excess(self, d):
+        r"""Mean excess ``E[X - d | X > d]`` via the limited-expected-value identity.
+
+        Uses :math:`E[(X-d)_+] = E[X] - E[\min(X, d)]` divided by ``S(d)`` --
+        finite-interval integration only (and closed-form
+        :meth:`limited_expected_value` where a subclass provides one), which
+        is numerically far better behaved for heavy tails than integrating
+        the survival function to infinity. An infinite mean means an
+        infinite mean excess, returned as ``inf``; where ``S(d) = 0`` the
+        conditional expectation is undefined and ``nan`` is returned.
+        Subclasses with a fully closed form may still override.
+        """
+        arr = np.asarray(d, dtype=float)
+        try:
+            mean = float(self.mean())
+        except (ValueError, OverflowError):
+            mean = float("inf")  # models that raise where the mean diverges
+        out = np.empty(np.atleast_1d(arr).shape, dtype=float)
+        for i, di in enumerate(np.atleast_1d(arr)):
+            surv = float(self.sf(float(di)))
+            if surv <= 0.0:
+                out[i] = np.nan
+            elif not np.isfinite(mean):
+                out[i] = np.inf
+            else:
+                out[i] = (mean - float(self.limited_expected_value(float(di)))) / surv
+        return float(out[0]) if arr.ndim == 0 else out.reshape(arr.shape)
+
     # --- Quantile / inverse CDF ---
     def quantile(self, p):
         """Inverse CDF (quantile / Value-at-Risk).

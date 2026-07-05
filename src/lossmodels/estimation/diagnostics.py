@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from .censoring import censored_log_likelihood, _prepare, kaplan_meier
 
@@ -327,3 +328,58 @@ def goodness_of_fit(model, data, k: int, truncation=None, censored=None) -> dict
             else np.broadcast_to(np.asarray(censored, dtype=bool), np.asarray(data).shape)
         out["n_uncensored"] = int(np.sum(~cens))
     return out
+
+
+def compare_fits(models, data, truncation=None, censored=None) -> "pd.DataFrame":
+    """Side-by-side scorecard for fitted models on one dataset.
+
+    The companion to :func:`fit_best_severity`: rather than returning a
+    single winner by one criterion, every candidate is scored on every
+    criterion so the trade-offs are visible -- a model can win AIC while
+    losing the tail (Anderson-Darling weights the tails; Kolmogorov-Smirnov
+    the body).
+
+    Parameters
+    ----------
+    models : mapping or sequence
+        ``name -> fitted model``, or a sequence (named by class, deduped).
+    data : array-like
+        Observations; the same data every model is scored on.
+    truncation, censored : optional
+        Passed through to every statistic, as in :func:`log_likelihood`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per model: ``n_params``, ``loglik``, ``aic``, ``bic``,
+        ``ks``, ``ad``, ``cvm``. Lower is better for everything except
+        ``loglik``.
+    """
+    from .uncertainty import model_parameters
+
+    if hasattr(models, "items"):
+        named = list(models.items())
+    else:
+        named, seen = [], {}
+        for m in models:
+            base = type(m).__name__
+            seen[base] = seen.get(base, 0) + 1
+            named.append((base if seen[base] == 1 else f"{base}_{seen[base]}", m))
+    if not named:
+        raise ValueError("no models given")
+
+    rows = []
+    for name, m in named:
+        k = len(model_parameters(m))
+        rows.append(
+            {
+                "n_params": k,
+                "loglik": log_likelihood(m, data, truncation=truncation, censored=censored),
+                "aic": aic(m, data, k, truncation=truncation, censored=censored),
+                "bic": bic(m, data, k, truncation=truncation, censored=censored),
+                "ks": ks_statistic(m, data, truncation=truncation, censored=censored),
+                "ad": anderson_darling(m, data, truncation=truncation, censored=censored),
+                "cvm": cramer_von_mises(m, data, truncation=truncation, censored=censored),
+            }
+        )
+    return pd.DataFrame(rows, index=pd.Index([n for n, _ in named], name="model"))

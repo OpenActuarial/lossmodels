@@ -16,6 +16,8 @@ except _PackageNotFoundError:  # running from a source tree without an installed
 del _PackageNotFoundError, _version
 
 from .severity import (
+    increased_limits_table,
+    loss_elimination_table,
     SeverityModel,
     Exponential,
     Gamma,
@@ -55,6 +57,10 @@ from .frequency import (
 from .aggregate import CollectiveRiskModel
 from .empirical import EmpiricalSeverity, EmpiricalFrequency
 from .estimation import (
+    FitUncertainty,
+    fit_uncertainty,
+    model_parameters,
+    compare_fits,
     censored_log_likelihood,
     kaplan_meier,
     fit_mle_censored,
@@ -85,6 +91,12 @@ from .estimation import (
 )
 
 __all__ = [
+    "loss_elimination_table",
+    "increased_limits_table",
+    "compare_fits",
+    "model_parameters",
+    "fit_uncertainty",
+    "FitUncertainty",
     "__version__",
     "SeverityModel", "Exponential", "Gamma", "Lognormal", "Pareto",
     "SplicedSeverity", "Weibull",
