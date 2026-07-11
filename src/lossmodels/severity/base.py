@@ -1,9 +1,10 @@
-import numpy as np
-from ..utils.random import RNGLike
-
 from abc import ABC, abstractmethod
+
+import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import brentq
+
+from ..utils.random import RNGLike
 
 
 class SeverityModel(ABC):

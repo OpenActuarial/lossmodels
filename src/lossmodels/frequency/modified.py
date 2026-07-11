@@ -8,11 +8,11 @@ probability ``p0_modified`` at zero, rescaling the rest (Loss Models B.3.2):
 """
 
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 
+from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, resolve_rng
 from .base import FrequencyModel
 from .truncated import ZeroTruncated
-from ..utils.numeric import eval_dist
 
 
 class ZeroModified(FrequencyModel):

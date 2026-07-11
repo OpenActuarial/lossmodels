@@ -4,11 +4,11 @@ from scipy.stats import poisson as poisson_dist
 
 from lossmodels.aggregate.discretization import discretize_severity
 from lossmodels.aggregate.fft import (
-    fft_aggregate_poisson,
     cdf_from_pmf_fft,
+    fft_aggregate_poisson,
     mean_from_aggregate_pmf_fft,
 )
-from lossmodels.aggregate.panjer import panjer_recursion, mean_from_aggregate_pmf
+from lossmodels.aggregate.panjer import mean_from_aggregate_pmf, panjer_recursion
 from lossmodels.frequency import Poisson
 from lossmodels.severity import Exponential
 

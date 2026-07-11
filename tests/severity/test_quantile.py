@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from scipy.stats import lognorm
 
-from lossmodels.severity import Lognormal, Gamma, Pareto, Weibull, Exponential
-from lossmodels.severity.base import SeverityModel
 from lossmodels.empirical import EmpiricalSeverity
+from lossmodels.severity import Exponential, Gamma, Lognormal, Pareto, Weibull
+from lossmodels.severity.base import SeverityModel
 
 MODELS = [
     Lognormal(mu=9.0, sigma=1.0),

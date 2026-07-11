@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.integrate import quad
 
-from ..utils.random import RNGLike, resolve_rng
-
 from ..severity.base import SeverityModel
+from ..utils.random import RNGLike, resolve_rng
 
 
 class OrdinaryDeductible(SeverityModel):

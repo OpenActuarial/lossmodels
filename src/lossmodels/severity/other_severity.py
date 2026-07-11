@@ -8,11 +8,12 @@ Lognormal already lives in ``lossmodels.Lognormal``.
 """
 
 import numpy as np
-from ..utils.random import RNGLike, scipy_random_state
-from scipy.stats import invgauss, pareto, t as student_t
+from scipy.stats import invgauss, pareto
+from scipy.stats import t as student_t
 
-from .base import SeverityModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, scipy_random_state
+from .base import SeverityModel
 
 
 class InverseGaussian(SeverityModel):

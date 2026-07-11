@@ -12,7 +12,6 @@ import pytest
 from lossmodels.aggregate import discretize_severity, mean_from_pmf
 from lossmodels.severity import Exponential
 
-
 H, MAX_LOSS = 10.0, 4000.0
 SEV = Exponential(0.01)  # mean 100; tail mass beyond MAX_LOSS is ~4e-18
 

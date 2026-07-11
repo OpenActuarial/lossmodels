@@ -21,11 +21,11 @@ Parameter -> SciPy mapping (verified against the Appendix A E[X^k] formulas):
 from math import gamma as _G
 
 import numpy as np
-from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import betaprime, burr, burr12, fisk, lomax
 
-from .base import SeverityModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, scipy_random_state
+from .base import SeverityModel
 
 
 class Burr(SeverityModel):

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from .censoring import censored_log_likelihood, _prepare, kaplan_meier
+from .censoring import _prepare, censored_log_likelihood, kaplan_meier
 
 
 def log_likelihood(model, data, truncation=None, censored=None) -> float:
@@ -369,7 +369,7 @@ def compare_fits(models, data, truncation=None, censored=None) -> "pd.DataFrame"
         raise ValueError("no models given")
 
     rows = []
-    for name, m in named:
+    for _, m in named:
         k = len(model_parameters(m))
         rows.append(
             {

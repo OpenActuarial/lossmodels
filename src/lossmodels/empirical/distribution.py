@@ -1,8 +1,8 @@
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 
 from ..frequency.base import FrequencyModel
 from ..severity.base import SeverityModel
+from ..utils.random import RNGLike, resolve_rng
 
 
 class EmpiricalSeverity(SeverityModel):

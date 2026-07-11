@@ -13,7 +13,6 @@ uncertainty matches however the model was actually fit.
 from __future__ import annotations
 
 import inspect
-
 from dataclasses import dataclass
 from statistics import NormalDist
 
@@ -120,10 +119,10 @@ def fit_uncertainty(
 
     def loglik(vec):
         try:
-            candidate = cls(**dict(zip(names, (float(v) for v in vec))))
+            candidate = cls(**dict(zip(names, (float(v) for v in vec), strict=True)))
         except (ValueError, TypeError) as exc:
             raise ValueError(
-                f"could not evaluate the likelihood at {dict(zip(names, vec))!r} "
+                f"could not evaluate the likelihood at {dict(zip(names, vec, strict=True))!r} "
                 f"while differentiating: {exc}"
             ) from exc
         return float(log_likelihood(candidate, data, truncation=truncation,

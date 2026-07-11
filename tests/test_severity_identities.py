@@ -1,4 +1,6 @@
 """Distribution-level identities every severity must satisfy."""
+from itertools import pairwise
+
 import numpy as np
 import pytest
 
@@ -48,7 +50,7 @@ def test_pdf_is_cdf_derivative(m):
 def test_lev_properties(m):
     grid = [m.quantile(q) for q in (0.25, 0.5, 0.9, 0.99)]
     levs = [m.limited_expected_value(d) for d in grid]
-    assert all(b >= a - 1e-9 for a, b in zip(levs, levs[1:]))  # nondecreasing
+    assert all(b >= a - 1e-9 for a, b in pairwise(levs))  # nondecreasing
     assert m.limited_expected_value(m.quantile(0.999999) * 50) == pytest.approx(m.mean(), rel=1e-3)
 
 

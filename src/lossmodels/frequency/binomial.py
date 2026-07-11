@@ -1,9 +1,9 @@
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import binom
 
-from .base import FrequencyModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, resolve_rng
+from .base import FrequencyModel
 
 
 class Binomial(FrequencyModel):

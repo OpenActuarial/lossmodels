@@ -1,4 +1,4 @@
-from .distribution import EmpiricalSeverity, EmpiricalFrequency
+from .distribution import EmpiricalFrequency, EmpiricalSeverity
 
 __all__ = [
     "EmpiricalSeverity",

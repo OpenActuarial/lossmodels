@@ -1,6 +1,6 @@
+from lossmodels.aggregate import CollectiveRiskModel
 from lossmodels.frequency import Poisson
 from lossmodels.severity import Lognormal
-from lossmodels.aggregate import CollectiveRiskModel
 
 freq = Poisson(lam=2.5)
 sev = Lognormal(mu=10.5, sigma=0.9)

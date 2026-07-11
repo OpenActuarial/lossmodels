@@ -3,9 +3,14 @@ import numpy as np
 import pytest
 
 import lossmodels as lm
+from lossmodels.aggregate import (
+    discretize_severity,
+    fft_aggregate_poisson,
+    mean_from_pmf,
+    stop_loss_from_pmf,
+    var_from_pmf,
+)
 from lossmodels.coverage import Layer, OrdinaryDeductible
-from lossmodels.aggregate import (discretize_severity, fft_aggregate_poisson,
-                                  mean_from_pmf, stop_loss_from_pmf, var_from_pmf)
 
 
 def test_coverage_page_numbers():

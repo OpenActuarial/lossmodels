@@ -9,11 +9,11 @@ Both are supported on (0, theta) with theta a known scale parameter.
 from math import gamma as _G
 
 import numpy as np
-from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import beta as beta_dist
 
-from .base import SeverityModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, scipy_random_state
+from .base import SeverityModel
 
 
 class Beta(SeverityModel):

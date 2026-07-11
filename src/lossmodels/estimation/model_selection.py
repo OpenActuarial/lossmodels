@@ -20,7 +20,6 @@ from .moments import (
     fit_weibull_moments,
 )
 
-
 SEVERITY_MLE_FITTERS = {
     "exponential": (fit_exponential, 1),
     "gamma": (fit_gamma, 2),

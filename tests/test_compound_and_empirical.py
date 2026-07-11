@@ -1,4 +1,6 @@
 """Compound-distribution identities and the empirical risk-measure estimators."""
+from itertools import pairwise
+
 import numpy as np
 import pytest
 
@@ -38,7 +40,7 @@ def test_crm_stop_loss_decreasing_under_common_random_numbers():
     crm = lm.CollectiveRiskModel(lm.Poisson(6.0), lm.Gamma(2.0, 400.0))
     sl = [crm.stop_loss(d, n_sim=50_000, rng=4) for d in (0.0, 2000.0, 6000.0, 12_000.0)]
     assert sl[0] == pytest.approx(crm.mean(), rel=0.02)
-    assert all(b <= a for a, b in zip(sl, sl[1:]))
+    assert all(b <= a for a, b in pairwise(sl))
 
 
 def test_empirical_var_is_inverted_cdf_quantile():

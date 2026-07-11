@@ -78,5 +78,5 @@ print("Panjer mean:", panjer_mean)
 print()
 
 print("First 15 aggregate pmf values from Panjer:")
-for x, p in zip(x_values[:15], aggregate_pmf[:15]):
+for x, p in zip(x_values[:15], aggregate_pmf[:15], strict=True):
     print(f"S = {x:5.2f} -> {p:.6f}")

@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from lossmodels.aggregate import CollectiveRiskModel
+from lossmodels.coverage import Layer
 from lossmodels.frequency import Poisson
 from lossmodels.severity import Exponential, Lognormal
-from lossmodels.coverage import Layer
 
 
 def test_collective_init_valid():

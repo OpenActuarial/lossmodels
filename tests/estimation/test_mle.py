@@ -7,15 +7,14 @@ from lossmodels.estimation import (
     fit_exponential,
     fit_gamma,
     fit_lognormal,
+    fit_mle,
     fit_negbinomial,
     fit_pareto,
     fit_poisson,
     fit_weibull,
-    fit_mle,
 )
 from lossmodels.frequency import NegativeBinomial, Poisson
 from lossmodels.severity import Exponential, Gamma, Lognormal, Pareto, Weibull
-
 
 # ---------------------------
 # fit_exponential

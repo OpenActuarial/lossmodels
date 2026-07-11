@@ -12,7 +12,6 @@ from lossmodels.estimation import (
 from lossmodels.frequency import NegativeBinomial, Poisson
 from lossmodels.severity import Exponential, Gamma, Lognormal, Weibull
 
-
 # ---------------------------
 # Negative Binomial
 # ---------------------------

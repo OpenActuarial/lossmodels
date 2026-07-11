@@ -1,9 +1,9 @@
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import gamma
 
-from .base import SeverityModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, resolve_rng
+from .base import SeverityModel
 
 
 class Gamma(SeverityModel):

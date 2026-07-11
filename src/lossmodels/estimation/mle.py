@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import gamma as gamma_dist
-from scipy.stats import nbinom
-from scipy.stats import weibull_min
+from scipy.stats import nbinom, weibull_min
 
 from ..frequency import NegativeBinomial, Poisson
 from ..severity import (

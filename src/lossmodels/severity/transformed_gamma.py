@@ -12,11 +12,11 @@ their inverses. Parameter -> SciPy mapping (verified against the table moments):
 from math import gamma as _G
 
 import numpy as np
-from ..utils.random import RNGLike, scipy_random_state
 from scipy.stats import invgamma, invweibull
 
-from .base import SeverityModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, scipy_random_state
+from .base import SeverityModel
 
 
 class InverseGamma(SeverityModel):

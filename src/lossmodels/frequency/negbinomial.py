@@ -1,9 +1,9 @@
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 from scipy.stats import nbinom
 
-from .base import FrequencyModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, resolve_rng
+from .base import FrequencyModel
 
 
 class NegativeBinomial(FrequencyModel):

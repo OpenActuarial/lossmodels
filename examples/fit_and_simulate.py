@@ -1,9 +1,9 @@
 import numpy as np
 
+from lossmodels.aggregate import CollectiveRiskModel
 from lossmodels.empirical import EmpiricalFrequency, EmpiricalSeverity
 from lossmodels.estimation import fit_exponential, fit_lognormal, fit_poisson
-from lossmodels.estimation.diagnostics import log_likelihood, aic, bic
-from lossmodels.aggregate import CollectiveRiskModel
+from lossmodels.estimation.diagnostics import aic, bic, log_likelihood
 
 np.random.seed(123)
 

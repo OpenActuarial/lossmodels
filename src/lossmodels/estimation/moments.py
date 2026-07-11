@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import brentq
-from scipy.special import gamma as gamma_func, gammaln
+from scipy.special import gamma as gamma_func
+from scipy.special import gammaln
 
 from ..frequency import NegativeBinomial, Poisson
 from ..severity import Exponential, Gamma, Lognormal, Pareto, Weibull

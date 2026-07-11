@@ -1,7 +1,8 @@
-import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 from abc import ABC, abstractmethod
 
+import numpy as np
+
+from ..utils.random import RNGLike, resolve_rng
 from .risk_measures import tvar as empirical_tvar
 from .risk_measures import var as empirical_var
 

@@ -1,13 +1,14 @@
 import time
+
 import numpy as np
 
 from lossmodels.aggregate import (
     CollectiveRiskModel,
     discretize_severity,
+    fft_aggregate_poisson,
     mean_from_aggregate_pmf,
     mean_from_aggregate_pmf_fft,
     panjer_recursion,
-    fft_aggregate_poisson,
 )
 from lossmodels.frequency import Poisson
 from lossmodels.severity import Exponential

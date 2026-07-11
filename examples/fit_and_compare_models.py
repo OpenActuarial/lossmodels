@@ -1,13 +1,13 @@
 import numpy as np
 
 from lossmodels.estimation import (
-    fit_best_severity,
-    fit_lognormal,
-    fit_exponential,
-    fit_gamma,
-    fit_weibull,
     aic,
     bic,
+    fit_best_severity,
+    fit_exponential,
+    fit_gamma,
+    fit_lognormal,
+    fit_weibull,
     log_likelihood,
 )
 

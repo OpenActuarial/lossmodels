@@ -2,10 +2,9 @@ import numpy as np
 import pytest
 
 from lossmodels.estimation import fit_exponential, fit_lognormal, fit_poisson
-from lossmodels.estimation.diagnostics import log_likelihood, aic, bic
-from lossmodels.severity import Exponential
+from lossmodels.estimation.diagnostics import aic, bic, log_likelihood
 from lossmodels.frequency import Poisson
-
+from lossmodels.severity import Exponential
 
 # ---------------------------
 # log_likelihood

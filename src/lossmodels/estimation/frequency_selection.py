@@ -1,9 +1,8 @@
 import numpy as np
 
 from .diagnostics import aic, bic
-from .mle import fit_poisson, fit_negbinomial
-from .moments import fit_poisson_moments, fit_negbinomial_moments
-
+from .mle import fit_negbinomial, fit_poisson
+from .moments import fit_negbinomial_moments, fit_poisson_moments
 
 FREQUENCY_MLE_FITTERS = {
     "poisson": (fit_poisson, 1),

@@ -1,17 +1,16 @@
 import numpy as np
 import pytest
 
-from lossmodels.severity import Lognormal
 from lossmodels.estimation import (
-    fit_lognormal,
-    fit_best_severity,
-    log_likelihood,
-    ks_statistic,
     anderson_darling,
     cramer_von_mises,
-    tail_quantile_table,
+    fit_best_severity,
+    fit_lognormal,
     goodness_of_fit,
+    ks_statistic,
+    tail_quantile_table,
 )
+from lossmodels.severity import Lognormal
 
 
 @pytest.fixture

@@ -1,11 +1,19 @@
 """Panjer / FFT aggregate machinery and the PMF-based risk measures."""
+from itertools import pairwise
+
 import numpy as np
 import pytest
 
 import lossmodels as lm
 from lossmodels.aggregate import (
-    cdf_from_pmf, discretize_severity, fft_aggregate_poisson, mean_from_pmf,
-    panjer_recursion, stop_loss_from_pmf, tvar_from_pmf, var_from_pmf,
+    cdf_from_pmf,
+    discretize_severity,
+    fft_aggregate_poisson,
+    mean_from_pmf,
+    panjer_recursion,
+    stop_loss_from_pmf,
+    tvar_from_pmf,
+    var_from_pmf,
 )
 
 H = 25.0
@@ -48,7 +56,7 @@ def test_stop_loss_from_pmf_properties():
     assert stop_loss_from_pmf(agg, H, 0.0) == pytest.approx(mean, rel=1e-9)
     grid = [0.0, 2000.0, 5000.0, 10_000.0]
     sl = [stop_loss_from_pmf(agg, H, d) for d in grid]
-    assert all(b <= a + 1e-9 for a, b in zip(sl, sl[1:]))
+    assert all(b <= a + 1e-9 for a, b in pairwise(sl))
 
 
 def test_panjer_matches_collective_monte_carlo():

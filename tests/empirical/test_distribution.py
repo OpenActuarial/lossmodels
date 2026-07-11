@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 
-from lossmodels.empirical import EmpiricalSeverity, EmpiricalFrequency
-
+from lossmodels.empirical import EmpiricalFrequency, EmpiricalSeverity
 
 # ---------------------------
 # EmpiricalSeverity tests

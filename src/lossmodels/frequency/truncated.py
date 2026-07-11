@@ -13,10 +13,10 @@ the mass at zero and renormalizes, exactly as in Loss Models Appendix B.3.1:
 from math import log
 
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 
-from .base import FrequencyModel
 from ..utils.numeric import eval_dist
+from ..utils.random import RNGLike, resolve_rng
+from .base import FrequencyModel
 
 
 class ZeroTruncated(FrequencyModel):

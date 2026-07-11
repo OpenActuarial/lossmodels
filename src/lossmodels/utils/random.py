@@ -11,11 +11,9 @@ Every ``sample`` method accepts ``rng``:
 """
 from __future__ import annotations
 
-from typing import Union
-
 import numpy as np
 
-RNGLike = Union[np.random.Generator, int, None]
+RNGLike = np.random.Generator | int | None
 
 
 def resolve_rng(rng: RNGLike):

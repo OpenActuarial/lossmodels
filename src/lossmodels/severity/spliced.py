@@ -1,7 +1,7 @@
 import numpy as np
-from ..utils.random import RNGLike, resolve_rng
 from scipy.integrate import quad
 
+from ..utils.random import RNGLike, resolve_rng
 from .base import SeverityModel
 
 

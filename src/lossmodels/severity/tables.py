@@ -49,7 +49,7 @@ def _delta_se(model, uncertainty: FitUncertainty, func, step: float = 1e-5):
         up[i] += h
         dn[i] -= h
         grad[i] = (
-            func(cls(**dict(zip(names, up)))) - func(cls(**dict(zip(names, dn))))
+            func(cls(**dict(zip(names, up, strict=True)))) - func(cls(**dict(zip(names, dn, strict=True))))
         ) / (2.0 * h)
     var = float(grad @ np.asarray(uncertainty.covariance, dtype=float) @ grad)
     return float(np.sqrt(max(var, 0.0)))

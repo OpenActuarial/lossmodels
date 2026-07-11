@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 from scipy.integrate import quad
 
-from lossmodels.severity import Lognormal, Pareto, Exponential, SplicedSeverity
-
+from lossmodels.severity import Lognormal, Pareto, SplicedSeverity
 
 U = 50_000.0
 W = 0.9
