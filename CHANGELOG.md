@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.3
+
+Bump version number to update PyPI with updated README.
+
 ## 0.7.2
 
 ### Changed
