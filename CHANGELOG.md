@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0
+
+Add `lossmodels.integrations.actuarialpy`: consume the canonical
+`actuarialpy.Experience` at claim grain (claims-listing bindings). Resolves
+amounts and per-period frequency counts from the bound roles, refuses aggregated experience tabs
+(recorded pivots), and warns when an exposure role marks aggregated data.
+Soft dependency: the core package stays array-level; install the
+`[actuarialpy]` extra or the `openactuarial` meta-package.
+
 ## 0.7.3
 
 Bump version number to update PyPI with updated README.
