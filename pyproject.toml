@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lossmodels"
-version = "0.8.1"
+version = "0.8.2"
 description = "Loss-distribution modeling: severity and frequency fitting, including under deductibles and limits, and aggregate loss distributions via Panjer recursion, FFT, and simulation."
 readme = "README.md"
 requires-python = ">=3.10"
