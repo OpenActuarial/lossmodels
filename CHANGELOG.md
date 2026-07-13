@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.1
+
+Metadata-only release.
+
+- Cap the optional actuarialpy integration at the next minor:
+  `>=0.46,<0.47` (both the `actuarialpy` extra and the dev extra).
+- Standardize numeric floors: `numpy>=1.23`, `pandas>=1.5`.
+- Declare Python 3.14 support in the classifiers.
+- No code changes.
+
 ## 0.8.0
 
 Add `lossmodels.integrations.actuarialpy`: consume the canonical

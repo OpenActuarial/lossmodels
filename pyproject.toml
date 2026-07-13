@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lossmodels"
-version = "0.8.0"
+version = "0.8.1"
 description = "Loss-distribution modeling: severity and frequency fitting, including under deductibles and limits, and aggregate loss distributions via Panjer recursion, FFT, and simulation."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,19 +31,20 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Office/Business :: Financial",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "numpy>=1.22",
+    "numpy>=1.23",
     "scipy>=1.8",
-    "pandas>=1.4",
+    "pandas>=1.5",
 ]
 
 [project.optional-dependencies]
-actuarialpy = ["actuarialpy>=0.46"]
+actuarialpy = ["actuarialpy>=0.46,<0.47"]
 dev = [
-    "actuarialpy>=0.46","pytest>=7.0", "pytest-cov>=4.0"]
+    "actuarialpy>=0.46,<0.47","pytest>=7.0", "pytest-cov>=4.0"]
 
 [project.urls]
 Homepage = "https://github.com/OpenActuarial/lossmodels"
