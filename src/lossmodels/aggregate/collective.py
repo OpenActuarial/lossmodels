@@ -33,6 +33,13 @@ class CollectiveRiskModel(AggregateModel):
         ``int`` seed, or a ``numpy.random.Generator``; a seed or generator is
         threaded through both the frequency and severity draws so the whole
         aggregate simulation is reproducible.
+
+        Vectorized: all claim counts are drawn at once, then ``counts.sum()``
+        severities in a single call, and each simulation's aggregate is a
+        segment sum. Because a ``numpy`` generator is a sequential stream,
+        drawing the severities in one call yields the *same* sequence as the
+        former per-simulation loop, so results are unchanged for a given seed --
+        only much faster for large ``size``.
         """
         if size <= 0:
             raise ValueError("size must be positive")
@@ -43,16 +50,20 @@ class CollectiveRiskModel(AggregateModel):
             if rng is None
             else self.frequency.sample(size=size, rng=rng)
         )
+        totals = np.asarray(counts).astype(int)
+        total = int(totals.sum())
         aggregate_losses = np.zeros(size, dtype=float)
-
-        for i, n_claims in enumerate(counts):
-            if n_claims > 0:
-                draws = (
-                    self.severity.sample(size=int(n_claims))
-                    if rng is None
-                    else self.severity.sample(size=int(n_claims), rng=rng)
-                )
-                aggregate_losses[i] = np.sum(draws)
+        if total > 0:
+            draws = (
+                self.severity.sample(size=total)
+                if rng is None
+                else self.severity.sample(size=total, rng=rng)
+            )
+            draws = np.asarray(draws, dtype=float)
+            # map each drawn severity to its simulation, then sum per simulation.
+            # Simulations with zero claims contribute no draws and stay 0.
+            sim_index = np.repeat(np.arange(size), totals)
+            aggregate_losses = np.bincount(sim_index, weights=draws, minlength=size).astype(float)
 
         return aggregate_losses
 

@@ -3,7 +3,27 @@ import numpy as np
 from ..frequency import Poisson
 
 
-def fft_aggregate_poisson(frequency, severity_pmf: np.ndarray, n_steps: int) -> np.ndarray:
+class AggregateMassLossWarning(UserWarning):
+    """Emitted when FFT cleanup absorbs a material amount of probability mass.
+
+    The compound FFT can lose or wrap mass through aliasing, an under-long
+    lattice (the aggregate extends past ``n_steps``), or numerical negatives.
+    Clipping to zero and renormalizing hides all three: the returned pmf looks
+    complete even when the raw transform did not sum to one. A material
+    correction means the lattice/``n_steps`` is too short -- widen it. Silence
+    with ``on_mass_loss="ignore"`` or fail with ``on_mass_loss="raise"``.
+    """
+
+
+def fft_aggregate_poisson(
+    frequency,
+    severity_pmf: np.ndarray,
+    n_steps: int,
+    *,
+    on_mass_loss: str = "warn",
+    mass_tol: float = 1e-6,
+    return_diagnostics: bool = False,
+):
     """
     Compute aggregate loss pmf for a compound Poisson model using Fast Fourier Transform (FFT).
 
@@ -16,11 +36,23 @@ def fft_aggregate_poisson(frequency, severity_pmf: np.ndarray, n_steps: int) -> 
     n_steps : int
         Number of aggregate points to return minus 1. The returned array has
         length n_steps + 1.
+    on_mass_loss : {"warn", "raise", "ignore"}
+        What to do when the clip-and-renormalize cleanup moves more than
+        ``mass_tol`` of probability -- a signal of aliasing or a too-short
+        lattice. ``"warn"`` (default) emits :class:`AggregateMassLossWarning`.
+    mass_tol : float
+        Tolerance for the cleanup correction (negative mass, or the
+        pre-normalization total's distance from one).
+    return_diagnostics : bool
+        If ``True``, return ``(pmf, diagnostics)`` where ``diagnostics`` reports
+        the negative mass clipped, the raw (pre-normalization) total, and the
+        normalization factor applied.
 
     Returns
     -------
     np.ndarray
-        Aggregate loss pmf of length n_steps + 1.
+        Aggregate loss pmf of length n_steps + 1 (or ``(pmf, dict)`` when
+        ``return_diagnostics``).
 
     Notes
     -----
@@ -33,6 +65,8 @@ def fft_aggregate_poisson(frequency, severity_pmf: np.ndarray, n_steps: int) -> 
     """
     if not isinstance(frequency, Poisson):
         raise TypeError("fft_aggregate_poisson currently supports only Poisson frequency.")
+    if on_mass_loss not in ("warn", "raise", "ignore"):
+        raise ValueError("on_mass_loss must be 'warn', 'raise', or 'ignore'")
 
     severity_pmf = np.asarray(severity_pmf, dtype=float)
 
@@ -62,13 +96,35 @@ def fft_aggregate_poisson(frequency, severity_pmf: np.ndarray, n_steps: int) -> 
     fft_g = np.exp(lam * (fft_f - 1.0))
     g = np.fft.ifft(fft_g).real
 
-    # Numerical cleanup
+    # Numerical cleanup -- record what it absorbs before hiding it.
+    negative_mass = float(-g[g < 0.0].sum())
     g = np.maximum(g, 0.0)
-    total_g = g.sum()
-    if total_g <= 0:
+    raw_total = float(g.sum())
+    if raw_total <= 0:
         raise ValueError("FFT aggregate pmf has zero total probability.")
 
-    g /= total_g
+    correction = max(negative_mass, abs(raw_total - 1.0))
+    if correction > mass_tol and on_mass_loss != "ignore":
+        msg = (
+            f"FFT aggregate cleanup moved {correction:.3g} of probability mass "
+            f"(negative mass {negative_mass:.3g}, pre-normalization total "
+            f"{raw_total:.6g}); the lattice or n_steps is likely too short and "
+            f"tail mass has been truncated or aliased. Widen the support."
+        )
+        if on_mass_loss == "raise":
+            raise ValueError(msg)
+        import warnings
+
+        warnings.warn(msg, AggregateMassLossWarning, stacklevel=2)
+
+    g = g / raw_total
+    if return_diagnostics:
+        return g, {
+            "negative_mass": negative_mass,
+            "raw_mass": raw_total,
+            "normalization_factor": 1.0 / raw_total,
+            "normalized": True,
+        }
     return g
 
 
